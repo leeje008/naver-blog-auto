@@ -72,8 +72,12 @@ if st.button("🚀 초안 생성", type="primary", use_container_width=True):
                 resized = resize_image(raw)
                 image_bytes_list.append(resized)
 
-        # 이미지 HTML 태그 생성
-        img_html_tags = build_image_html(image_bytes_list) if image_bytes_list else []
+        # 이미지 HTML 태그 생성 (SEO 최적화 ALT 텍스트 포함)
+        img_html_tags = (
+            build_image_html(image_bytes_list, image_descriptions, target_keyword)
+            if image_bytes_list
+            else []
+        )
 
         with st.spinner("초안 생성 중... (LLM 호출)"):
             try:
@@ -91,6 +95,8 @@ if st.button("🚀 초안 생성", type="primary", use_container_width=True):
                 st.session_state.generated = result
                 st.session_state.image_bytes_list = image_bytes_list
                 st.session_state.image_html_tags = img_html_tags
+                st.session_state.image_descriptions = image_descriptions
+                st.session_state.target_keyword = target_keyword
                 st.session_state.revision_history = [result.copy()]
 
                 # 이력 저장

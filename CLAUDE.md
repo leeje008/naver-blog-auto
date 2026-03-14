@@ -22,11 +22,15 @@ streamlit run app/main.py
 - `core/` — 비즈니스 로직 모듈
   - `llm_client.py` — Ollama LLM 추상화
   - `keyword.py` — 블루오션 키워드 엔진
-  - `generator.py` — 블로그 초안 생성
+  - `generator.py` — 블로그 초안 생성 + SEO 최적화 재작성
   - `publisher.py` — 네이버 블로그 업로드
   - `reference.py` — 레퍼런스 글 크롤링/관리
-  - `image_utils.py` — 이미지 리사이즈/HTML 변환
+  - `image_utils.py` — 이미지 리사이즈/HTML 변환/SEO ALT 최적화
+  - `seo_validator.py` — SEO 검증 엔진 (6개 항목 점수 분석)
 - `prompts/` — YAML 프롬프트 템플릿
+  - `draft_generation.yaml` — 초안 생성 (SEO 규칙 포함)
+  - `keyword_expansion.yaml` — 키워드 확장
+  - `seo_optimization.yaml` — SEO 최적화 재작성
 - `data/` — 로컬 데이터 (references, history)
 - `legacy/` — v1 코드 (참고용)
 
@@ -37,5 +41,14 @@ streamlit run app/main.py
 - 프롬프트는 반드시 `prompts/*.yaml`에 외부화
 - 환경변수는 `.env` + python-dotenv
 
+## SEO 최적화 시스템
+- `core/seo_validator.py` — 네이버 D.I.A.+ 알고리즘 기반 SEO 검증
+- 6개 항목 검증: 제목, 본문 길이, 키워드 밀도, 헤딩 구조, 이미지, 해시태그
+- 가중 평균 점수 (0~100) + 등급 (A/B/C/D)
+- 미리보기 페이지에서 SEO 대시보드 자동 표시
+- "SEO 최적화" 버튼으로 LLM 기반 자동 개선
+- 상세 리서치: `SEO_RESEARCH.md`
+
 ## 설계 문서
 - `DESIGN_v5.md` — 전체 기획 설계 명세
+- `SEO_RESEARCH.md` — 네이버 SEO 최적화 리서치 보고서

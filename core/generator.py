@@ -19,6 +19,28 @@ def load_prompt(name: str) -> dict:
         return yaml.safe_load(f)
 
 
+def _build_reference_context(reference_posts: list[dict]) -> tuple[str, str]:
+    """레퍼런스 글 목록에서 프롬프트용 텍스트를 생성.
+
+    Returns:
+        (ref_text, img_pos_text) 튜플
+    """
+    ref_text = ""
+    img_pos_text = ""
+    if not reference_posts:
+        return "(레퍼런스 없음)", "(없음)"
+
+    for i, ref in enumerate(reference_posts, 1):
+        ref_text += (
+            f"\n### 레퍼런스 {i}: {ref.get('title', '')}\n"
+            f"{ref.get('content', '')[:1500]}\n"
+        )
+        positions = ref.get("image_positions", [])
+        img_pos_text += f"레퍼런스 {i}: {positions}\n"
+
+    return ref_text, img_pos_text
+
+
 def generate_draft(
     llm_client: LLMClient,
     target_keyword: str,
@@ -32,16 +54,7 @@ def generate_draft(
     """
     prompt_template = load_prompt("draft_generation")
 
-    # 레퍼런스 텍스트 구성
-    ref_text = ""
-    img_pos_text = ""
-    for i, ref in enumerate(reference_posts, 1):
-        ref_text += (
-            f"\n### 레퍼런스 {i}: {ref.get('title', '')}\n"
-            f"{ref.get('content', '')[:1500]}\n"
-        )
-        positions = ref.get("image_positions", [])
-        img_pos_text += f"레퍼런스 {i}: {positions}\n"
+    ref_text, img_pos_text = _build_reference_context(reference_posts)
 
     # 이미지 설명 구성
     img_desc_text = ""
@@ -68,16 +81,31 @@ def revise_draft(
     llm_client: LLMClient,
     original: dict,
     instruction: str,
+    reference_posts: list[dict] | None = None,
 ) -> dict:
-    """기존 초안을 수정 지시에 따라 재생성."""
+    """기존 초안을 수정 지시에 따라 재생성.
+
+    Args:
+        reference_posts: 레퍼런스 글 목록 (톤 & 매너 유지용)
+    """
+    ref_context = ""
+    if reference_posts:
+        ref_text, _ = _build_reference_context(reference_posts)
+        ref_context = (
+            f"\n## 레퍼런스 글 (톤 & 매너 유지 필수)\n{ref_text}\n"
+            "위 레퍼런스 글의 톤 & 매너, 문체를 반드시 유지하세요.\n"
+        )
+
     system_prompt = (
         "당신은 네이버 블로그 전문 작가입니다. "
         "기존 글을 수정 요청에 맞게 수정합니다.\n\n"
+        f"{ref_context}"
         "## 규칙\n"
         "1. 수정 요청 사항만 반영하고 나머지는 유지하세요.\n"
         "2. 이미지 플레이스홀더([IMAGE_N])는 유지하세요.\n"
         "3. HTML 형식을 유지하세요.\n"
-        "4. 한국어로 작성하세요.\n\n"
+        "4. 한국어로 작성하세요.\n"
+        "5. 레퍼런스 글의 톤 & 매너를 유지하세요.\n\n"
         '## 출력 형식\nJSON: {{"title": "...", "content": "...", "tags": [...], "summary": "..."}}'
     )
 
@@ -87,6 +115,41 @@ def revise_draft(
         f"본문:\n{original.get('content', '')}\n"
         f"태그: {', '.join(original.get('tags', []))}\n\n"
         f"## 수정 요청\n{instruction}"
+    )
+
+    raw = llm_client.generate(system_prompt=system_prompt, user_prompt=user_prompt)
+    return _parse_json_response(raw)
+
+
+def seo_optimize_draft(
+    llm_client: LLMClient,
+    original: dict,
+    seo_feedback: str,
+    target_keyword: str,
+    reference_posts: list[dict] | None = None,
+) -> dict:
+    """SEO 분석 결과를 기반으로 글을 최적화 재작성.
+
+    Args:
+        original: 기존 초안 {"title", "content", "tags", "summary"}
+        seo_feedback: SEO 검증에서 나온 개선 사항 텍스트
+        target_keyword: 타겟 키워드
+        reference_posts: 레퍼런스 글 목록 (톤 & 매너 유지용)
+    """
+    prompt_template = load_prompt("seo_optimization")
+
+    ref_text, img_pos_text = _build_reference_context(reference_posts or [])
+
+    system_prompt = prompt_template["system"].format(
+        reference_posts=ref_text,
+        image_positions=img_pos_text,
+        seo_feedback=seo_feedback,
+        target_keyword=target_keyword,
+    )
+    user_prompt = prompt_template["user"].format(
+        title=original.get("title", ""),
+        content=original.get("content", ""),
+        tags=", ".join(original.get("tags", [])),
     )
 
     raw = llm_client.generate(system_prompt=system_prompt, user_prompt=user_prompt)

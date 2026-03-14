@@ -29,8 +29,18 @@ def image_to_base64(image_bytes: bytes) -> str:
     return base64.b64encode(image_bytes).decode("utf-8")
 
 
-def build_image_html(image_bytes_list: list[bytes]) -> list[str]:
-    """이미지들을 HTML img 태그로 변환."""
+def build_image_html(
+    image_bytes_list: list[bytes],
+    image_descriptions: list[str] | None = None,
+    target_keyword: str = "",
+) -> list[str]:
+    """이미지들을 SEO 최적화된 HTML img 태그로 변환.
+
+    Args:
+        image_bytes_list: 이미지 바이트 리스트
+        image_descriptions: 각 이미지에 대한 설명 (ALT 텍스트용)
+        target_keyword: 타겟 키워드 (ALT에 자연스럽게 포함)
+    """
     html_tags = []
     for i, img_bytes in enumerate(image_bytes_list):
         b64 = image_to_base64(img_bytes)
@@ -41,8 +51,44 @@ def build_image_html(image_bytes_list: list[bytes]) -> list[str]:
                 ext = img.format.lower()
         except Exception:
             pass
+
+        alt_text = _build_alt_text(i, image_descriptions, target_keyword)
         html_tags.append(
             f'<img src="data:image/{ext};base64,{b64}" '
-            f'alt="image_{i + 1}" style="max-width:100%;" />'
+            f'alt="{alt_text}" style="max-width:100%;" />'
         )
     return html_tags
+
+
+def _build_alt_text(
+    index: int,
+    descriptions: list[str] | None,
+    keyword: str,
+) -> str:
+    """SEO 최적화된 ALT 텍스트 생성 (20~50자, 키워드 포함).
+
+    예: description="카페 내부 인테리어", keyword="강남 카페"
+        → "강남 카페 - 분위기 좋은 내부 인테리어"
+    """
+    desc = ""
+    if descriptions and index < len(descriptions):
+        desc = descriptions[index].strip()
+
+    if not desc:
+        if keyword:
+            return f"{keyword} 관련 이미지 {index + 1}"
+        return f"image_{index + 1}"
+
+    # 키워드가 설명에 이미 포함되어 있으면 그대로 사용
+    if keyword and keyword in desc:
+        alt = desc
+    elif keyword:
+        alt = f"{keyword} - {desc}"
+    else:
+        alt = desc
+
+    # 50자 제한
+    if len(alt) > 50:
+        alt = alt[:47] + "..."
+
+    return alt

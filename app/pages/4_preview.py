@@ -1,4 +1,4 @@
-"""미리보기 페이지 — 수정 + 업로드."""
+"""미리보기 페이지 — SEO 대시보드 + 수정 + 업로드."""
 
 import json
 import os
@@ -10,9 +10,11 @@ import streamlit as st
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from core.generator import revise_draft
+from core.generator import revise_draft, seo_optimize_draft
 from core.llm_client import LLMClient
 from core.publisher import NaverPublisher
+from core.reference import load_references
+from core.seo_validator import validate_seo
 
 HISTORY_DIR = Path(__file__).parent.parent.parent / "data" / "history"
 
@@ -24,6 +26,102 @@ if not st.session_state.get("generated"):
 
 gen = st.session_state.generated
 image_html_tags = st.session_state.get("image_html_tags", [])
+target_keyword = st.session_state.get("target_keyword", "")
+image_count = len(st.session_state.get("image_bytes_list", []))
+references = load_references()  # 톤 & 매너 유지용
+
+# ── SEO 대시보드 ──────────────────────────────────────────────
+st.subheader("📊 SEO 분석")
+
+seo_report = validate_seo(gen, target_keyword, image_count)
+score = seo_report["score"]
+grade = seo_report["grade"]
+
+# 등급별 색상
+grade_colors = {"A": "🟢", "B": "🔵", "C": "🟡", "D": "🔴"}
+grade_icon = grade_colors.get(grade, "⚪")
+
+# 종합 점수 표시
+score_col, grade_col, action_col = st.columns([1, 1, 1])
+with score_col:
+    st.metric("SEO 점수", f"{score}/100")
+with grade_col:
+    st.metric("등급", f"{grade_icon} {grade}")
+with action_col:
+    seo_optimize = st.button("🚀 SEO 최적화", use_container_width=True)
+
+# 항목별 체크리스트
+checks = seo_report["checks"]
+check_labels = {
+    "title": "📌 제목",
+    "body_length": "📏 본문 길이",
+    "keyword_density": "🔑 키워드 밀도",
+    "heading_structure": "📑 헤딩 구조",
+    "images": "🖼️ 이미지",
+    "hashtags": "#️⃣ 해시태그",
+}
+
+cols = st.columns(3)
+for i, (key, label) in enumerate(check_labels.items()):
+    check = checks[key]
+    icon = "✅" if check["pass"] else "❌"
+    with cols[i % 3]:
+        with st.expander(f"{icon} {label} ({check['score']}점)"):
+            st.caption(check["message"])
+            if check["suggestions"]:
+                for suggestion in check["suggestions"]:
+                    st.markdown(f"- {suggestion}")
+
+# SEO 최적화 버튼 처리
+if seo_optimize:
+    if not target_keyword:
+        st.warning("타겟 키워드가 없습니다.")
+    else:
+        # 낮은 점수 항목의 피드백 수집
+        feedback_items = []
+        for key, check in checks.items():
+            if not check["pass"] and check["suggestions"]:
+                label = check_labels.get(key, key)
+                for s in check["suggestions"]:
+                    feedback_items.append(f"- {label}: {s}")
+
+        if not feedback_items:
+            st.success("이미 SEO 점수가 충분합니다!")
+        else:
+            seo_feedback = "\n".join(feedback_items)
+            with st.spinner("SEO 최적화 중... (LLM 호출)"):
+                try:
+                    model = st.session_state.get("llm_model", "qwen3.5:27b")
+                    llm_client = LLMClient(model=model)
+
+                    optimized = seo_optimize_draft(
+                        llm_client=llm_client,
+                        original=gen,
+                        seo_feedback=seo_feedback,
+                        target_keyword=target_keyword,
+                        reference_posts=references,
+                    )
+
+                    st.session_state.generated = optimized
+                    history = st.session_state.get("revision_history", [])
+                    history.append(optimized.copy())
+                    st.session_state.revision_history = history
+
+                    # 이력 저장
+                    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+                    history_path = HISTORY_DIR / f"{ts}_seo.json"
+                    history_path.write_text(
+                        json.dumps(optimized, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+
+                    st.success("SEO 최적화 완료!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"SEO 최적화 실패: {e}")
+
+st.divider()
 
 # ── 미리보기 ─────────────────────────────────────────────────
 st.markdown(f"### {gen.get('title', '')}")
@@ -95,6 +193,7 @@ if st.button("📝 수정 반영", use_container_width=True):
                     llm_client=llm_client,
                     original=gen,
                     instruction=revision_text,
+                    reference_posts=references,
                 )
 
                 st.session_state.generated = revised
