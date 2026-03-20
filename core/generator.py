@@ -7,6 +7,9 @@ from pathlib import Path
 import yaml
 
 from core.llm_client import LLMClient
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
@@ -74,7 +77,9 @@ def generate_draft(
     )
 
     raw = llm_client.generate(system_prompt=system_prompt, user_prompt=user_prompt)
-    return _parse_json_response(raw)
+    result = _parse_json_response(raw)
+    logger.info("초안 생성 완료: title='%s'", result.get("title", "")[:40])
+    return result
 
 
 def revise_draft(
@@ -118,7 +123,9 @@ def revise_draft(
     )
 
     raw = llm_client.generate(system_prompt=system_prompt, user_prompt=user_prompt)
-    return _parse_json_response(raw)
+    result = _parse_json_response(raw)
+    logger.info("수정 완료: title='%s'", result.get("title", "")[:40])
+    return result
 
 
 def seo_optimize_draft(
@@ -153,7 +160,9 @@ def seo_optimize_draft(
     )
 
     raw = llm_client.generate(system_prompt=system_prompt, user_prompt=user_prompt)
-    return _parse_json_response(raw)
+    result = _parse_json_response(raw)
+    logger.info("SEO 최적화 완료: title='%s'", result.get("title", "")[:40])
+    return result
 
 
 def _parse_json_response(raw: str) -> dict:

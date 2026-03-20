@@ -1,13 +1,9 @@
 """작성 이력 페이지."""
 
 import json
-import os
-import sys
 from pathlib import Path
 
 import streamlit as st
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 HISTORY_DIR = Path(__file__).parent.parent.parent / "data" / "history"
 

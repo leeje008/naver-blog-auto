@@ -2,6 +2,7 @@
 
 import json
 import re
+from functools import lru_cache
 from pathlib import Path
 
 import requests
@@ -76,8 +77,11 @@ def save_references(references: list[dict]) -> None:
     REFERENCES_PATH.write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    # Streamlit 캐시 무효화
+    load_references.cache_clear()
 
 
+@lru_cache(maxsize=1)
 def load_references() -> list[dict]:
     """저장된 레퍼런스 목록 로드. 없으면 빈 리스트 반환."""
     if REFERENCES_PATH.exists():

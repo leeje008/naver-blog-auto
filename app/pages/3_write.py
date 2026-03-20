@@ -1,14 +1,10 @@
 """글 작성 페이지 — 이미지 업로드 + 초안 생성."""
 
 import json
-import os
-import sys
 from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from core.generator import generate_draft
 from core.image_utils import build_image_html, resize_image

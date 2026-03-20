@@ -1,13 +1,9 @@
 """설정 페이지 — API 인증 + 레퍼런스 글 등록."""
 
 import os
-import sys
 
 import streamlit as st
 from dotenv import load_dotenv
-
-# 프로젝트 루트를 sys.path에 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from core.llm_client import LLMClient
 from core.reference import crawl_reference, save_references, load_references

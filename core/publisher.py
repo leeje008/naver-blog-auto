@@ -10,9 +10,13 @@ class NaverPublisher:
     ENDPOINT = "https://api.blog.naver.com/xmlrpc"
 
     def __init__(self, blog_id: str, password: str):
+        if not blog_id or not blog_id.strip():
+            raise ValueError("네이버 블로그 ID가 설정되지 않았습니다. 설정 페이지에서 입력해 주세요.")
+        if not password or not password.strip():
+            raise ValueError("네이버 API 연동 암호가 설정되지 않았습니다. 설정 페이지에서 입력해 주세요.")
         self.client = xmlrpc.client.ServerProxy(self.ENDPOINT)
-        self.blog_id = blog_id
-        self.password = password
+        self.blog_id = blog_id.strip()
+        self.password = password.strip()
 
     def publish(self, title: str, html: str, tags: list[str] | None = None) -> str:
         """블로그 글 게시 후 post_id 반환."""

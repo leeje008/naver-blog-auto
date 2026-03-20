@@ -1,12 +1,7 @@
 """키워드 추천 페이지 — 블루오션 키워드 탐색."""
 
-import os
-import sys
-
 import pandas as pd
 import streamlit as st
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from core.keyword import KeywordEngine
 from core.llm_client import LLMClient
@@ -38,11 +33,14 @@ if st.button("🔍 키워드 분석", type="primary", use_container_width=True):
 
         # 경쟁도 조회
         results = []
+        failed_count = 0
         for i, kw in enumerate(keywords):
             blog_count = engine.get_blog_count(kw)
+            if blog_count is None:
+                failed_count += 1
             results.append({
                 "keyword": kw,
-                "blog_count": blog_count,
+                "blog_count": blog_count if blog_count is not None else 0,
                 "competition": engine._competition_level(blog_count),
             })
             pct = 30 + int(70 * (i + 1) / len(keywords))
@@ -53,6 +51,11 @@ if st.button("🔍 키워드 분석", type="primary", use_container_width=True):
 
         st.session_state.keyword_results = results
         st.success(f"분석 완료! {len(results)}개 키워드")
+        if failed_count > 0:
+            st.warning(
+                f"⚠️ {failed_count}개 키워드의 블로그 수 조회에 실패했습니다. "
+                "네이버 검색 페이지 구조가 변경되었을 수 있습니다."
+            )
 
 # ── 결과 표시 ────────────────────────────────────────────────
 if "keyword_results" in st.session_state and st.session_state.keyword_results:

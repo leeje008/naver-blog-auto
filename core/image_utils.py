@@ -2,21 +2,59 @@
 
 import base64
 import io
+import logging
 
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
+logger = logging.getLogger(__name__)
 
 MAX_WIDTH = 860  # 네이버 블로그 본문 최대 너비
+SUPPORTED_FORMATS = {"JPEG", "PNG", "WEBP", "GIF"}
+
+
+class ImageProcessingError(Exception):
+    """이미지 처리 실패 시 발생."""
+
+
+def validate_image(image_bytes: bytes) -> Image.Image:
+    """이미지 바이트를 검증하고 PIL Image 객체 반환."""
+    try:
+        img = Image.open(io.BytesIO(image_bytes))
+        img.verify()
+        # verify() 후 재오픈 필요
+        img = Image.open(io.BytesIO(image_bytes))
+    except UnidentifiedImageError:
+        raise ImageProcessingError("인식할 수 없는 이미지 형식입니다.")
+    except Exception as e:
+        raise ImageProcessingError(f"이미지 파일이 손상되었습니다: {e}")
+
+    fmt = (img.format or "").upper()
+    if fmt and fmt not in SUPPORTED_FORMATS:
+        raise ImageProcessingError(
+            f"지원하지 않는 이미지 형식입니다: {fmt}. "
+            f"지원 형식: {', '.join(SUPPORTED_FORMATS)}"
+        )
+    return img
 
 
 def resize_image(image_bytes: bytes, max_width: int = MAX_WIDTH) -> bytes:
     """이미지를 네이버 블로그 최적 크기로 리사이즈."""
-    img = Image.open(io.BytesIO(image_bytes))
+    try:
+        img = validate_image(image_bytes)
+    except ImageProcessingError:
+        logger.warning("이미지 검증 실패, 원본 그대로 사용합니다.")
+        return image_bytes
 
     if img.width > max_width:
         ratio = max_width / img.width
         new_size = (max_width, int(img.height * ratio))
         img = img.resize(new_size, Image.LANCZOS)
+
+    # RGBA → RGB 변환 (JPEG 저장용)
+    if img.mode == "RGBA":
+        background = Image.new("RGB", img.size, (255, 255, 255))
+        background.paste(img, mask=img.split()[3])
+        img = background
 
     buf = io.BytesIO()
     fmt = "JPEG" if img.mode == "RGB" else "PNG"

@@ -1,14 +1,10 @@
 """미리보기 페이지 — SEO 대시보드 + 수정 + 업로드."""
 
 import json
-import os
-import sys
 from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from core.generator import revise_draft, seo_optimize_draft
 from core.llm_client import LLMClient
