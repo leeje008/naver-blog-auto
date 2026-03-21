@@ -1,12 +1,28 @@
 """네이버 블로그 자동 생성기 — Streamlit 엔트리포인트."""
 
+import os
+
 import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
 
 st.set_page_config(
     page_title="네이버 블로그 자동 생성기",
     page_icon="✍️",
     layout="wide",
 )
+
+# ── .env 기반 세션 기본값 초기화 ──────────────────────────────
+_env_defaults = {
+    "naver_client_id": os.getenv("NAVER_CLIENT_ID", ""),
+    "naver_client_secret": os.getenv("NAVER_CLIENT_SECRET", ""),
+    "naver_blog_id": os.getenv("NAVER_BLOG_ID", ""),
+    "naver_api_secret": os.getenv("NAVER_API_SECRET", ""),
+}
+for key, default in _env_defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = default
 
 st.title("✍️ 네이버 블로그 자동 생성기")
 

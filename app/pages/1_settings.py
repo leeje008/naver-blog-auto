@@ -12,22 +12,28 @@ load_dotenv()
 
 st.header("⚙️ 설정")
 
-# ── 네이버 블로그 API 설정 ───────────────────────────────────
-st.subheader("📤 네이버 블로그 API")
-
-if "naver_blog_id" not in st.session_state:
-    st.session_state.naver_blog_id = os.getenv("NAVER_BLOG_ID", "")
-if "naver_api_secret" not in st.session_state:
-    st.session_state.naver_api_secret = os.getenv("NAVER_API_SECRET", "")
-
-st.session_state.naver_blog_id = st.text_input(
-    "블로그 ID", value=st.session_state.naver_blog_id, placeholder="네이버 아이디"
+# ── 네이버 검색 API 설정 ─────────────────────────────────────
+st.subheader("🔍 네이버 검색 API")
+st.caption(
+    "키워드 경쟁도 분석에 필요합니다. "
+    "[네이버 개발자센터](https://developers.naver.com/)에서 앱 등록 후 발급받으세요."
 )
-st.session_state.naver_api_secret = st.text_input(
-    "API 연동 암호",
-    value=st.session_state.naver_api_secret,
+
+if "naver_client_id" not in st.session_state:
+    st.session_state.naver_client_id = os.getenv("NAVER_CLIENT_ID", "")
+if "naver_client_secret" not in st.session_state:
+    st.session_state.naver_client_secret = os.getenv("NAVER_CLIENT_SECRET", "")
+
+st.session_state.naver_client_id = st.text_input(
+    "Client ID",
+    value=st.session_state.naver_client_id,
+    placeholder="네이버 개발자센터에서 발급",
+)
+st.session_state.naver_client_secret = st.text_input(
+    "Client Secret",
+    value=st.session_state.naver_client_secret,
     type="password",
-    placeholder="블로그 관리 > API 설정",
+    placeholder="네이버 개발자센터에서 발급",
 )
 
 st.divider()
@@ -42,16 +48,39 @@ try:
 except Exception:
     st.warning("Ollama에 연결할 수 없습니다. Ollama가 실행 중인지 확인하세요.")
 
-if available_models:
-    if "llm_model" not in st.session_state:
-        st.session_state.llm_model = available_models[0]
-    st.session_state.llm_model = st.selectbox(
-        "모델 선택", available_models, index=0
-    )
-else:
-    st.session_state.llm_model = st.text_input(
-        "모델 이름 직접 입력", value="qwen3.5:27b", placeholder="qwen3.5:27b"
-    )
+col_model1, col_model2 = st.columns(2)
+
+with col_model1:
+    st.caption("**글 작성 / SEO 최적화용** (고품질)")
+    if available_models:
+        if "llm_model" not in st.session_state:
+            st.session_state.llm_model = available_models[0]
+        st.session_state.llm_model = st.selectbox(
+            "글 작성 모델", available_models, index=0
+        )
+    else:
+        st.session_state.llm_model = st.text_input(
+            "글 작성 모델 직접 입력", value="qwen3.5:27b", placeholder="qwen3.5:27b"
+        )
+
+with col_model2:
+    st.caption("**키워드 분석용** (경량·빠름)")
+    if available_models:
+        # 8b/12b 모델 우선, 없으면 첫 번째 모델
+        default_kw = next(
+            (m for m in available_models if "8b" in m or "12b" in m),
+            available_models[0],
+        )
+        default_idx = available_models.index(default_kw) if default_kw in available_models else 0
+        if "keyword_model" not in st.session_state:
+            st.session_state.keyword_model = default_kw
+        st.session_state.keyword_model = st.selectbox(
+            "키워드 모델", available_models, index=default_idx
+        )
+    else:
+        st.session_state.keyword_model = st.text_input(
+            "키워드 모델 직접 입력", value="llama3.1:8b", placeholder="llama3.1:8b"
+        )
 
 st.divider()
 
@@ -72,7 +101,7 @@ for i in range(1, 4):
 col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("🔍 크롤링으로 등록", use_container_width=True):
+    if st.button("🔍 크롤링으로 등록", width="stretch"):
         if not ref_urls:
             st.error("URL을 1개 이상 입력하세요.")
         else:
@@ -90,7 +119,7 @@ with col1:
                 st.success(f"레퍼런스 {len(references)}개 저장 완료!")
 
 with col2:
-    if st.button("📋 수동 입력으로 전환", use_container_width=True):
+    if st.button("📋 수동 입력으로 전환", width="stretch"):
         st.session_state.manual_input = True
 
 # 수동 입력 fallback
@@ -116,7 +145,7 @@ if st.session_state.get("manual_input"):
                     "image_positions": [],
                 })
 
-    if st.button("💾 수동 입력 저장", use_container_width=True):
+    if st.button("💾 수동 입력 저장", width="stretch"):
         if manual_refs:
             save_references(manual_refs)
             st.success(f"레퍼런스 {len(manual_refs)}개 저장 완료!")

@@ -1,5 +1,7 @@
 """블루오션 키워드 추천 엔진."""
 
+import math
+import os
 import re
 from functools import lru_cache
 
@@ -12,18 +14,32 @@ from core.logger import get_logger
 
 logger = get_logger(__name__)
 
+NAVER_SEARCH_API_URL = "https://openapi.naver.com/v1/search/blog.json"
+
 
 class KeywordEngine:
     """네이버 자동완성 + LLM 확장 + 경쟁도 조회."""
 
-    def __init__(self, llm_client: LLMClient):
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        naver_client_id: str = "",
+        naver_client_secret: str = "",
+    ):
         self.llm_client = llm_client
         self._session = ThrottledSession(min_interval=0.5)
+        self._naver_client_id = naver_client_id or os.getenv("NAVER_CLIENT_ID", "")
+        self._naver_client_secret = naver_client_secret or os.getenv("NAVER_CLIENT_SECRET", "")
 
-    def expand_keywords(self, seed: str) -> list[str]:
-        """네이버 자동완성 + LLM으로 키워드 확장."""
+    def expand_keywords(self, seed: str) -> list[dict]:
+        """네이버 자동완성 + LLM으로 키워드 확장.
+
+        Returns:
+            [{"keyword": str, "source": "autocomplete" | "llm"}]
+        """
         logger.info("키워드 확장 시작: seed='%s'", seed)
-        keywords = []
+        ac_keywords: list[str] = []
+        llm_keywords: list[str] = []
 
         # 1) 네이버 자동완성
         try:
@@ -33,8 +49,8 @@ class KeywordEngine:
             if resp.ok:
                 data = resp.json()
                 for item in data.get("items", [[]])[0]:
-                    keywords.append(item[0])
-                logger.debug("자동완성 결과: %d개", len(keywords))
+                    ac_keywords.append(item[0])
+                logger.debug("자동완성 결과: %d개", len(ac_keywords))
         except Exception as e:
             logger.warning("자동완성 API 실패: %s", e)
 
@@ -50,93 +66,180 @@ class KeywordEngine:
             for line in llm_result.strip().split("\n"):
                 line = line.strip().lstrip("0123456789.-) ")
                 if line:
-                    keywords.append(line)
+                    llm_keywords.append(line)
         except Exception as e:
             logger.warning("LLM 키워드 확장 실패: %s", e)
 
-        # 중복 제거 후 최대 15개
-        seen = set()
-        unique = []
-        for kw in keywords:
+        # 중복 제거 + 출처 태깅 (자동완성 우선)
+        seen: set[str] = set()
+        results: list[dict] = []
+
+        for kw in ac_keywords:
             if kw not in seen:
                 seen.add(kw)
-                unique.append(kw)
-        logger.info("키워드 확장 완료: %d개", len(unique[:15]))
-        return unique[:15]
+                results.append({"keyword": kw, "source": "autocomplete"})
+
+        for kw in llm_keywords:
+            if kw not in seen:
+                seen.add(kw)
+                results.append({"keyword": kw, "source": "llm"})
+
+        logger.info("키워드 확장 완료: %d개 (자동완성 %d, LLM %d)",
+                     len(results[:20]), len(ac_keywords), len(llm_keywords))
+        return results[:20]
 
     def get_blog_count(self, keyword: str) -> int | None:
-        """네이버 블로그 검색 결과 수 조회.
+        """네이버 공식 검색 API로 블로그 검색 결과 수 조회.
 
         Returns:
-            검색 결과 수. 조회 실패 시 None 반환 (0과 구분).
+            검색 결과 수. API 키 미설정 또는 조회 실패 시 None 반환.
         """
-        url = "https://search.naver.com/search.naver"
-        params = {"where": "blog", "query": keyword}
+        if not self._naver_client_id or not self._naver_client_secret:
+            logger.warning("네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.")
+            return None
+
+        headers = {
+            "X-Naver-Client-Id": self._naver_client_id,
+            "X-Naver-Client-Secret": self._naver_client_secret,
+        }
+        params = {"query": keyword, "display": 1}
 
         try:
-            resp = self._session.get(url, params=params)
-            resp.raise_for_status()
-            soup = BeautifulSoup(resp.text, "html.parser")
-
-            # selector fallback (네이버 DOM 변경 대응)
-            selectors = [
-                ".title_num",
-                ".title_desc",
-                ".sub_text",
-                ".result_num",
-                "span.num",
-            ]
-            text = None
-            for sel in selectors:
-                elem = soup.select_one(sel)
-                if elem:
-                    text = elem.text
-                    break
-
-            if text:
-                text = text.replace(",", "")
-                match = re.search(r"([\d,]+)\s*건", text)
-                if match:
-                    return int(match.group(1).replace(",", ""))
-
-            # 모든 셀렉터 실패 — 숫자 패턴 직접 탐색
-            all_text = soup.get_text()
-            match = re.search(r"([\d,]+)\s*건", all_text)
-            if match:
-                count = int(match.group(1).replace(",", ""))
-                if count > 0:
-                    logger.debug("fallback 패턴으로 블로그 수 추출: %d", count)
-                    return count
-
-            logger.warning(
-                "블로그 검색 수 셀렉터 매칭 실패 keyword='%s' — DOM 구조 변경 가능성",
-                keyword,
+            resp = requests.get(
+                NAVER_SEARCH_API_URL,
+                headers=headers,
+                params=params,
+                timeout=5,
             )
-            return None
+            resp.raise_for_status()
+            data = resp.json()
+            total = data.get("total", 0)
+            logger.debug("블로그 검색 수 조회 keyword='%s': %d건", keyword, total)
+            return total
         except Exception as e:
             logger.warning("블로그 검색 수 조회 실패 keyword='%s': %s", keyword, e)
             return None
 
     def analyze(self, seed: str) -> list[dict]:
-        """키워드 확장 + 경쟁도 조회 → 추천 리스트."""
+        """키워드 확장 + 경쟁도 조회 + 블루오션 점수 → 추천 리스트."""
         logger.info("키워드 분석 시작: seed='%s'", seed)
-        keywords = self.expand_keywords(seed)
+        keyword_items = self.expand_keywords(seed)
+
+        # 시드 키워드 블로그 수 조회 (상대 경쟁도 기준선)
+        seed_blog_count = self.get_blog_count(seed)
+        logger.info("시드 '%s' 블로그 수: %s건", seed, seed_blog_count)
 
         results = []
-        for kw in keywords:
+        for item in keyword_items:
+            kw = item["keyword"]
+            source = item["source"]
             blog_count = self.get_blog_count(kw)
-            top_quality = self.analyze_top_posts(kw)
+
+            blue_ocean_score = self._calc_blue_ocean_score(
+                keyword=kw,
+                source=source,
+                blog_count=blog_count,
+                seed=seed,
+                seed_blog_count=seed_blog_count,
+            )
+
+            # 시드 대비 비율 계산
+            ratio = None
+            if blog_count is not None and seed_blog_count and seed_blog_count > 0:
+                ratio = blog_count / seed_blog_count
+
             results.append({
                 "keyword": kw,
+                "source": source,
                 "blog_count": blog_count if blog_count is not None else 0,
                 "blog_count_available": blog_count is not None,
-                "competition": self._competition_level(blog_count),
-                "top_post_quality": top_quality,
+                "competition": self._relative_competition(ratio),
+                "seed_ratio": ratio,
+                "blue_ocean_score": blue_ocean_score,
             })
 
-        results.sort(key=lambda x: x["blog_count"])
+        results.sort(key=lambda x: x["blue_ocean_score"], reverse=True)
         logger.info("키워드 분석 완료: %d개 키워드", len(results))
         return results
+
+    def _calc_blue_ocean_score(
+        self,
+        keyword: str,
+        source: str,
+        blog_count: int | None,
+        seed: str,
+        seed_blog_count: int | None,
+    ) -> int:
+        """블루오션 점수 계산 (0~100).
+
+        시드 키워드 대비 상대적 경쟁도를 기반으로 점수 산출.
+
+        구성:
+        - 출처 점수 (30): 자동완성 = 실제 검색 수요 증거
+        - 상대 경쟁도 점수 (40): 시드 대비 블로그 수 비율 (로그 스케일)
+        - 구체성 점수 (30): 롱테일 키워드일수록 틈새 가능성
+        """
+        score = 0
+
+        # 1) 출처 점수 (max 30)
+        if source == "autocomplete":
+            score += 30
+        else:
+            score += 10
+
+        # 2) 상대 경쟁도 점수 (max 40) — 시드 대비 비율 기반
+        if blog_count is None or seed_blog_count is None or seed_blog_count == 0:
+            score += 20  # 데이터 없음 = 중립
+        else:
+            # 로그 스케일 차이: 클수록 시드보다 경쟁이 적음
+            log_diff = math.log10(max(seed_blog_count, 1)) - math.log10(max(blog_count, 1))
+            # log_diff 범위: 보통 -1 ~ 4+ (10배 ~ 10000배 차이)
+            ratio = blog_count / seed_blog_count
+
+            if ratio < 0.01:       # 시드 대비 1% 미만
+                score += 40
+            elif ratio < 0.05:     # 1~5%
+                score += 35
+            elif ratio < 0.15:     # 5~15%
+                score += 28
+            elif ratio < 0.30:     # 15~30%
+                score += 18
+            elif ratio < 0.60:     # 30~60%
+                score += 10
+            else:                  # 60%+ (시드와 비슷한 경쟁)
+                score += 3
+
+        # 3) 구체성 점수 (max 30) — 시드 대비 단어 수
+        seed_words = len(seed.split())
+        kw_words = len(keyword.split())
+        extra_words = kw_words - seed_words
+
+        if extra_words >= 3:
+            score += 30
+        elif extra_words == 2:
+            score += 25
+        elif extra_words == 1:
+            score += 15
+        else:
+            score += 5
+
+        return min(100, score)
+
+    @staticmethod
+    def _relative_competition(ratio: float | None) -> str:
+        """시드 대비 비율로 상대적 경쟁도 판단."""
+        if ratio is None:
+            return "알수없음"
+        if ratio < 0.05:
+            return "매우 낮음"
+        elif ratio < 0.15:
+            return "낮음"
+        elif ratio < 0.30:
+            return "중간"
+        elif ratio < 0.60:
+            return "높음"
+        else:
+            return "매우 높음"
 
     def analyze_top_posts(self, keyword: str) -> dict:
         """상위 블로그 글 5개 크롤링 → 글 길이/이미지 수 분석."""

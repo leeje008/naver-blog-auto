@@ -1,5 +1,7 @@
 """LLM 호출 추상화 모듈 (Ollama 기본, GPT 전환 대비)."""
 
+from collections.abc import Generator
+
 import ollama
 from ollama import ResponseError
 
@@ -83,6 +85,33 @@ class LLMClient:
         result = response["message"]["content"]
         logger.info("generate_with_image 완료: response_len=%d", len(result))
         return result
+
+    def generate_stream(
+        self, system_prompt: str, user_prompt: str
+    ) -> Generator[str, None, None]:
+        """스트리밍 텍스트 생성. 토큰 단위로 yield."""
+        self.ensure_connected()
+        logger.debug("generate_stream 호출: model=%s", self.model)
+        try:
+            stream = ollama.chat(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                stream=True,
+            )
+            for chunk in stream:
+                token = chunk["message"]["content"]
+                if token:
+                    yield token
+        except ResponseError as e:
+            if "not found" in str(e).lower():
+                raise OllamaConnectionError(
+                    f"모델 '{self.model}'을(를) 찾을 수 없습니다. "
+                    f"'ollama pull {self.model}' 명령으로 모델을 다운로드해 주세요."
+                ) from e
+            raise
 
     def list_models(self) -> list[str]:
         """사용 가능한 Ollama 모델 목록 반환."""

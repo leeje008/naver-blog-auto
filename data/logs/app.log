@@ -1,0 +1,92 @@
+[2026-03-21 14:16:49] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 14:16:56] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 14:17:23] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 14:18:07] INFO core.llm_client: LLMClient 초기화: model=gemma3:27b
+[2026-03-21 14:18:07] INFO core.keyword: 키워드 확장 시작: seed='서울 카페'
+[2026-03-21 14:18:07] DEBUG core.keyword: 자동완성 결과: 0개
+[2026-03-21 14:18:07] DEBUG core.llm_client: generate 호출: model=gemma3:27b, prompt_len=56
+[2026-03-21 14:18:23] INFO core.llm_client: generate 완료: response_len=214
+[2026-03-21 14:18:23] INFO core.keyword: 키워드 확장 완료: 15개
+[2026-03-21 14:18:24] WARNING core.keyword: 블로그 검색 수 조회 실패 keyword='서울 애견 동반 카페': 403 Client Error: Forbidden for url: https://search.naver.com/search.naver?where=blog&query=%EC%84%9C%EC%9A%B8+%EC%95%A0%EA%B2%AC+%EB%8F%99%EB%B0%98+%EC%B9%B4%ED%8E%98
+[2026-03-21 14:18:25] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 루프탑 카페 야경' — DOM 구조 변경 가능성
+[2026-03-21 14:18:25] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 조용한 공부하기 좋은 카페' — DOM 구조 변경 가능성
+[2026-03-21 14:18:26] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 대형 카페 주차' — DOM 구조 변경 가능성
+[2026-03-21 14:18:27] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 분위기 좋은 데이트 카페' — DOM 구조 변경 가능성
+[2026-03-21 14:18:28] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 디저트 맛있는 카페' — DOM 구조 변경 가능성
+[2026-03-21 14:18:29] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 뷰 좋은 카페 한강' — DOM 구조 변경 가능성
+[2026-03-21 14:18:29] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 가성비 좋은 카페' — DOM 구조 변경 가능성
+[2026-03-21 14:18:30] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 브런치 카페 추천' — DOM 구조 변경 가능성
+[2026-03-21 14:18:31] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 개인 카페 감성' — DOM 구조 변경 가능성
+[2026-03-21 14:18:32] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 노트북 작업 카페 콘센트' — DOM 구조 변경 가능성
+[2026-03-21 14:18:33] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 반려동물 동반 가능 카페 실내' — DOM 구조 변경 가능성
+[2026-03-21 14:18:33] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 벚꽃 명소 카페' — DOM 구조 변경 가능성
+[2026-03-21 14:18:34] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 힙스터 카페 성수' — DOM 구조 변경 가능성
+[2026-03-21 14:18:35] WARNING core.keyword: 블로그 검색 수 셀렉터 매칭 실패 keyword='서울 늦게까지 하는 카페' — DOM 구조 변경 가능성
+[2026-03-21 14:19:38] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 14:34:58] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 카페': 9988443건
+[2026-03-21 14:34:58] DEBUG core.keyword: 블로그 검색 수 조회 keyword='강남 브런치 카페': 47646건
+[2026-03-21 14:35:50] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 14:35:50] INFO core.keyword: 키워드 확장 시작: seed='설렁탕'
+[2026-03-21 14:35:50] DEBUG core.keyword: 자동완성 결과: 0개
+[2026-03-21 14:35:50] DEBUG core.llm_client: generate 호출: model=qwen3.5:27b, prompt_len=54
+[2026-03-21 14:41:04] INFO core.llm_client: generate 완료: response_len=331
+[2026-03-21 14:41:04] INFO core.keyword: 키워드 확장 완료: 15개
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:41:04] WARNING core.keyword: 네이버 검색 API 키가 설정되지 않았습니다. 설정 페이지에서 입력하세요.
+[2026-03-21 14:49:35] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 14:49:48] INFO core.llm_client: LLMClient 초기화: model=llama3.1:8b
+[2026-03-21 14:49:48] INFO core.keyword: 키워드 확장 시작: seed='서울 카페'
+[2026-03-21 14:49:48] DEBUG core.keyword: 자동완성 결과: 0개
+[2026-03-21 14:49:48] DEBUG core.llm_client: generate 호출: model=llama3.1:8b, prompt_len=56
+[2026-03-21 14:50:06] INFO core.llm_client: generate 완료: response_len=156
+[2026-03-21 14:50:06] INFO core.keyword: 키워드 확장 완료: 15개
+[2026-03-21 14:50:06] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 카페': 9988493건
+[2026-03-21 14:50:06] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 명품 카페': 155271건
+[2026-03-21 14:50:06] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 최고의 카페': 1709318건
+[2026-03-21 14:50:07] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 맛집 카페': 105697건
+[2026-03-21 14:50:07] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 인스타그램 카페': 396069건
+[2026-03-21 14:50:07] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 최신 카페': 210546건
+[2026-03-21 14:50:07] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 카페 추천': 4207678건
+[2026-03-21 14:50:07] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 명소 카페': 366875건
+[2026-03-21 14:50:07] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 아름다운 카페': 543987건
+[2026-03-21 14:50:08] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 카페 인테리어': 2030809건
+[2026-03-21 14:50:08] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 카페 디자인': 810168건
+[2026-03-21 14:50:08] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 카페 메뉴': 3263962건
+[2026-03-21 14:50:08] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 카페 리뷰': 799658건
+[2026-03-21 14:50:08] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 카페 사진': 4839578건
+[2026-03-21 14:50:08] DEBUG core.keyword: 블로그 검색 수 조회 keyword='서울 카페 방문후기': 1061638건
+[2026-03-21 14:55:56] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 14:56:44] INFO core.llm_client: LLMClient 초기화: model=llama3.1:8b
+[2026-03-21 14:56:44] INFO core.keyword: 키워드 확장 시작: seed='설렁탕'
+[2026-03-21 14:56:44] DEBUG core.keyword: 자동완성 결과: 0개
+[2026-03-21 14:56:44] DEBUG core.llm_client: generate 호출: model=llama3.1:8b, prompt_len=54
+[2026-03-21 14:56:48] INFO core.llm_client: generate 완료: response_len=161
+[2026-03-21 14:56:48] INFO core.keyword: 키워드 확장 완료: 15개
+[2026-03-21 14:56:48] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕': 873584건
+[2026-03-21 14:56:48] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 재료': 113106건
+[2026-03-21 14:56:48] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 레시피': 23414건
+[2026-03-21 14:56:48] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 가격': 228032건
+[2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 종류': 99620건
+[2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 재료 목록': 850건
+[2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛있는 점심': 99426건
+[2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 좋은 점심': 118661건
+[2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 해물탕': 5633건
+[2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 시원한 점심': 26848건
+[2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 건강한 점심': 13310건
+[2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 간편한 점심': 896건
+[2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 레전드 점심': 2377건
+[2026-03-21 14:56:50] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 쫀득쫀득 점심': 1364건
+[2026-03-21 14:56:50] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 해산물탕': 3569건

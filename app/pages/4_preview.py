@@ -6,7 +6,11 @@ from pathlib import Path
 
 import streamlit as st
 
-from core.generator import revise_draft, seo_optimize_draft
+from core.generator import (
+    _parse_json_response,
+    revise_draft_stream,
+    seo_optimize_draft_stream,
+)
 from core.llm_client import LLMClient
 from core.publisher import NaverPublisher
 from core.reference import load_references
@@ -44,7 +48,7 @@ with score_col:
 with grade_col:
     st.metric("등급", f"{grade_icon} {grade}")
 with action_col:
-    seo_optimize = st.button("🚀 SEO 최적화", use_container_width=True)
+    seo_optimize = st.button("🚀 SEO 최적화", width="stretch")
 
 # 항목별 체크리스트
 checks = seo_report["checks"]
@@ -85,37 +89,49 @@ if seo_optimize:
             st.success("이미 SEO 점수가 충분합니다!")
         else:
             seo_feedback = "\n".join(feedback_items)
-            with st.spinner("SEO 최적화 중... (LLM 호출)"):
-                try:
-                    model = st.session_state.get("llm_model", "qwen3.5:27b")
-                    llm_client = LLMClient(model=model)
+            try:
+                model = st.session_state.get("llm_model", "qwen3.5:27b")
+                llm_client = LLMClient(model=model)
 
-                    optimized = seo_optimize_draft(
-                        llm_client=llm_client,
-                        original=gen,
-                        seo_feedback=seo_feedback,
-                        target_keyword=target_keyword,
-                        reference_posts=references,
-                    )
+                st.caption("SEO 최적화 중...")
+                stream_area = st.empty()
+                raw_chunks = []
 
-                    st.session_state.generated = optimized
-                    history = st.session_state.get("revision_history", [])
-                    history.append(optimized.copy())
-                    st.session_state.revision_history = history
+                stream = seo_optimize_draft_stream(
+                    llm_client=llm_client,
+                    original=gen,
+                    seo_feedback=seo_feedback,
+                    target_keyword=target_keyword,
+                    reference_posts=references,
+                )
 
-                    # 이력 저장
-                    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-                    history_path = HISTORY_DIR / f"{ts}_seo.json"
-                    history_path.write_text(
-                        json.dumps(optimized, ensure_ascii=False, indent=2),
-                        encoding="utf-8",
-                    )
+                for token in stream:
+                    raw_chunks.append(token)
+                    stream_area.code("".join(raw_chunks), language=None)
 
-                    st.success("SEO 최적화 완료!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"SEO 최적화 실패: {e}")
+                raw_text = "".join(raw_chunks)
+                stream_area.empty()
+
+                optimized = _parse_json_response(raw_text)
+
+                st.session_state.generated = optimized
+                history = st.session_state.get("revision_history", [])
+                history.append(optimized.copy())
+                st.session_state.revision_history = history
+
+                # 이력 저장
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+                history_path = HISTORY_DIR / f"{ts}_seo.json"
+                history_path.write_text(
+                    json.dumps(optimized, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+
+                st.success("SEO 최적화 완료!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"SEO 최적화 실패: {e}")
 
 st.divider()
 
@@ -141,29 +157,12 @@ st.divider()
 col1, col2 = st.columns(2)
 
 with col1:
-    if st.button("✅ 승인 & 업로드", type="primary", use_container_width=True):
-        blog_id = st.session_state.get("naver_blog_id", "")
-        api_secret = st.session_state.get("naver_api_secret", "")
-
-        if not blog_id or not api_secret:
-            st.error("설정 페이지에서 네이버 블로그 ID와 API 암호를 입력하세요.")
-        else:
-            with st.spinner("네이버 블로그에 업로드 중..."):
-                try:
-                    publisher = NaverPublisher(blog_id, api_secret)
-                    post_id = publisher.publish(
-                        title=gen["title"],
-                        html=content_html,
-                        tags=tags,
-                    )
-                    url = publisher.get_post_url(post_id)
-                    st.success("업로드 완료!")
-                    st.markdown(f"[📄 블로그에서 확인하기]({url})")
-                except Exception as e:
-                    st.error(f"업로드 실패: {e}")
+    if st.button("📋 HTML 복사", type="primary", width="stretch"):
+        st.code(content_html, language="html")
+        st.info("위 HTML을 복사하여 네이버 블로그 에디터에 붙여넣으세요.")
 
 with col2:
-    if st.button("🔄 재생성", use_container_width=True):
+    if st.button("🔄 재생성", width="stretch"):
         st.session_state.generated = None
         st.rerun()
 
@@ -176,40 +175,52 @@ revision_text = st.text_area(
     placeholder="예: 서론을 더 짧게 해주세요, 결론에 CTA를 추가해주세요",
 )
 
-if st.button("📝 수정 반영", use_container_width=True):
+if st.button("📝 수정 반영", width="stretch"):
     if not revision_text:
         st.warning("수정 사항을 입력하세요.")
     else:
-        with st.spinner("수정 중..."):
-            try:
-                model = st.session_state.get("llm_model", "qwen3.5:27b")
-                llm_client = LLMClient(model=model)
+        try:
+            model = st.session_state.get("llm_model", "qwen3.5:27b")
+            llm_client = LLMClient(model=model)
 
-                revised = revise_draft(
-                    llm_client=llm_client,
-                    original=gen,
-                    instruction=revision_text,
-                    reference_posts=references,
-                )
+            st.caption("수정 중...")
+            stream_area = st.empty()
+            raw_chunks = []
 
-                st.session_state.generated = revised
-                history = st.session_state.get("revision_history", [])
-                history.append(revised.copy())
-                st.session_state.revision_history = history
+            stream = revise_draft_stream(
+                llm_client=llm_client,
+                original=gen,
+                instruction=revision_text,
+                reference_posts=references,
+            )
 
-                # 이력 저장
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-                history_path = HISTORY_DIR / f"{ts}_revised.json"
-                history_path.write_text(
-                    json.dumps(revised, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
+            for token in stream:
+                raw_chunks.append(token)
+                stream_area.code("".join(raw_chunks), language=None)
 
-                st.success("수정 완료!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"수정 실패: {e}")
+            raw_text = "".join(raw_chunks)
+            stream_area.empty()
+
+            revised = _parse_json_response(raw_text)
+
+            st.session_state.generated = revised
+            history = st.session_state.get("revision_history", [])
+            history.append(revised.copy())
+            st.session_state.revision_history = history
+
+            # 이력 저장
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+            history_path = HISTORY_DIR / f"{ts}_revised.json"
+            history_path.write_text(
+                json.dumps(revised, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+
+            st.success("수정 완료!")
+            st.rerun()
+        except Exception as e:
+            st.error(f"수정 실패: {e}")
 
 # ── 수정 이력 ────────────────────────────────────────────────
 revision_history = st.session_state.get("revision_history", [])

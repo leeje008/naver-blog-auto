@@ -6,7 +6,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from core.generator import generate_draft
+from core.generator import generate_draft_stream, _parse_json_response
 from core.image_utils import build_image_html, resize_image
 from core.llm_client import LLMClient
 from core.reference import load_references
@@ -51,7 +51,7 @@ if uploaded_images:
 # ── 초안 생성 ────────────────────────────────────────────────
 st.divider()
 
-if st.button("🚀 초안 생성", type="primary", use_container_width=True):
+if st.button("🚀 초안 생성", type="primary", width="stretch"):
     if not target_keyword:
         st.error("타겟 키워드를 입력하세요.")
     else:
@@ -75,38 +75,50 @@ if st.button("🚀 초안 생성", type="primary", use_container_width=True):
             else []
         )
 
-        with st.spinner("초안 생성 중... (LLM 호출)"):
-            try:
-                model = st.session_state.get("llm_model", "qwen3.5:27b")
-                llm_client = LLMClient(model=model)
+        try:
+            model = st.session_state.get("llm_model", "qwen3.5:27b")
+            llm_client = LLMClient(model=model)
 
-                result = generate_draft(
-                    llm_client=llm_client,
-                    target_keyword=target_keyword,
-                    image_descriptions=image_descriptions,
-                    reference_posts=references,
-                )
+            st.caption("생성 중...")
+            stream_area = st.empty()
+            raw_chunks = []
 
-                # 세션 저장
-                st.session_state.generated = result
-                st.session_state.image_bytes_list = image_bytes_list
-                st.session_state.image_html_tags = img_html_tags
-                st.session_state.image_descriptions = image_descriptions
-                st.session_state.target_keyword = target_keyword
-                st.session_state.revision_history = [result.copy()]
+            stream = generate_draft_stream(
+                llm_client=llm_client,
+                target_keyword=target_keyword,
+                image_descriptions=image_descriptions,
+                reference_posts=references,
+            )
 
-                # 이력 저장
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                history_path = HISTORY_DIR / f"{ts}.json"
-                history_path.write_text(
-                    json.dumps(result, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
+            for token in stream:
+                raw_chunks.append(token)
+                stream_area.code("".join(raw_chunks), language=None)
 
-                st.success("초안 생성 완료! '미리보기' 페이지에서 확인하세요.")
+            raw_text = "".join(raw_chunks)
+            stream_area.empty()
 
-            except Exception as e:
-                st.error(f"생성 실패: {e}")
+            result = _parse_json_response(raw_text)
+
+            # 세션 저장
+            st.session_state.generated = result
+            st.session_state.image_bytes_list = image_bytes_list
+            st.session_state.image_html_tags = img_html_tags
+            st.session_state.image_descriptions = image_descriptions
+            st.session_state.target_keyword = target_keyword
+            st.session_state.revision_history = [result.copy()]
+
+            # 이력 저장
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            history_path = HISTORY_DIR / f"{ts}.json"
+            history_path.write_text(
+                json.dumps(result, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+
+            st.success("초안 생성 완료! '미리보기' 페이지에서 확인하세요.")
+
+        except Exception as e:
+            st.error(f"생성 실패: {e}")
 
 # ── 현재 생성 상태 표시 ─────────────────────────────────────
 if st.session_state.get("generated"):
