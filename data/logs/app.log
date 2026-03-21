@@ -171,3 +171,57 @@
 [2026-03-21 15:14:12] INFO core.llm_client: LLMClient 초기화: model=llama3.1:8b
 [2026-03-21 15:14:12] DEBUG core.llm_client: generate_stream 호출: model=llama3.1:8b
 [2026-03-21 15:26:41] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 15:33:12] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 15:33:24] INFO core.llm_client: LLMClient 초기화: model=llama3.1:8b
+[2026-03-21 15:33:24] INFO core.keyword: 키워드 확장 시작: seed='설렁탕집'
+[2026-03-21 15:33:24] DEBUG core.keyword: 자동완성 결과: 0개
+[2026-03-21 15:33:24] DEBUG core.llm_client: generate 호출: model=llama3.1:8b, prompt_len=55
+[2026-03-21 15:33:27] INFO core.llm_client: generate 완료: response_len=124
+[2026-03-21 15:33:27] INFO core.keyword: 키워드 확장 완료: 16개 (자동완성 0, LLM 16)
+[2026-03-21 15:33:27] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집': 109586건
+[2026-03-21 15:33:28] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집': 109586건
+[2026-03-21 15:33:28] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕': 873590건
+[2026-03-21 15:33:28] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집': 495681건
+[2026-03-21 15:33:28] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 집주소': 95건
+[2026-03-21 15:33:28] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 가격': 228035건
+[2026-03-21 15:33:28] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛': 568784건
+[2026-03-21 15:33:28] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕점': 25건
+[2026-03-21 15:33:28] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕추천': 301378건
+[2026-03-21 15:33:29] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집 주소': 10694건
+[2026-03-21 15:33:29] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 집': 480453건
+[2026-03-21 15:33:29] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 가게': 193959건
+[2026-03-21 15:33:29] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 식당': 274754건
+[2026-03-21 15:33:29] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집 추천': 30460건
+[2026-03-21 15:33:29] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕점 가격': 7건
+[2026-03-21 15:33:29] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집 가격': 29137건
+[2026-03-21 15:33:29] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집 추천': 31203건
+[2026-03-21 15:34:06] INFO core.llm_client: LLMClient 초기화: model=gemma3:27b
+[2026-03-21 15:34:06] DEBUG core.llm_client: generate_stream 호출: model=gemma3:27b
+[2026-03-21 15:38:07] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-21 15:38:07] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-21 15:42:04] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 15:42:15] INFO core.llm_client: LLMClient 초기화: model=llama3.1:8b
+[2026-03-21 15:42:15] INFO core.keyword: 키워드 확장 시작: seed='설렁탕집'
+[2026-03-21 15:42:15] DEBUG core.keyword: 자동완성 결과: 0개
+[2026-03-21 15:42:15] DEBUG core.llm_client: generate 호출: model=llama3.1:8b, prompt_len=55
+[2026-03-21 15:42:18] INFO core.llm_client: generate 완료: response_len=113
+[2026-03-21 15:42:18] INFO core.keyword: 키워드 확장 완료: 14개 (자동완성 0, LLM 14)
+[2026-03-21 15:42:18] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집': 109587건
+[2026-03-21 15:42:18] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕': 873592건
+[2026-03-21 15:42:18] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집': 109587건
+[2026-03-21 15:42:18] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 가격': 228036건
+[2026-03-21 15:42:18] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 종류': 99621건
+[2026-03-21 15:42:19] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 종류 목록': 880건
+[2026-03-21 15:42:19] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 종류별 이름': 1656건
+[2026-03-21 15:42:19] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 메뉴': 408642건
+[2026-03-21 15:42:19] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 전문점': 73243건
+[2026-03-21 15:42:19] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집': 495682건
+[2026-03-21 15:42:19] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 집 추천': 177700건
+[2026-03-21 15:42:19] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 집 리스트': 11697건
+[2026-03-21 15:42:20] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 음식': 322459건
+[2026-03-21 15:42:20] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 가격표': 7099건
+[2026-03-21 15:42:20] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 종류에 따른 가격': 699건
+[2026-03-21 15:42:31] INFO core.llm_client: LLMClient 초기화: model=gemma3:27b
+[2026-03-21 15:42:31] DEBUG core.llm_client: generate_stream 호출: model=gemma3:27b
+[2026-03-21 15:42:57] INFO core.llm_client: LLMClient 초기화: model=gemma3:27b
+[2026-03-21 15:42:57] DEBUG core.llm_client: generate_stream 호출: model=gemma3:27b

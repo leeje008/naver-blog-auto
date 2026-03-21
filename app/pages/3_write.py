@@ -1,4 +1,4 @@
-"""글 작성 페이지 — 이미지 업로드 + 초안 생성."""
+"""글 작성 페이지 — 입력 + 생성 + 블로그 스타일 미리보기 통합."""
 
 import json
 from datetime import datetime
@@ -9,6 +9,7 @@ import streamlit as st
 from core.generator import generate_draft_stream, _parse_json_response
 from core.image_utils import build_image_html, resize_image
 from core.llm_client import LLMClient
+from core.publisher import NaverPublisher
 from core.reference import load_references
 
 HISTORY_DIR = Path(__file__).parent.parent.parent / "data" / "history"
@@ -25,32 +26,29 @@ target_keyword = st.text_input(
 )
 
 # ── 이미지 업로드 ────────────────────────────────────────────
-st.subheader("🖼️ 이미지 업로드")
-uploaded_images = st.file_uploader(
-    "이미지 업로드 (순서대로)",
-    type=["jpg", "jpeg", "png", "webp"],
-    accept_multiple_files=True,
-)
+with st.expander("🖼️ 이미지 업로드 (선택사항)"):
+    uploaded_images = st.file_uploader(
+        "이미지 업로드 (순서대로)",
+        type=["jpg", "jpeg", "png", "webp"],
+        accept_multiple_files=True,
+    )
 
-# 각 이미지에 대한 설명 입력
-image_descriptions = []
-if uploaded_images:
-    st.caption("각 이미지에 대한 간단한 설명을 입력하세요.")
-    for i, img_file in enumerate(uploaded_images):
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            st.image(img_file, width=200)
-        with col2:
-            desc = st.text_input(
-                f"이미지 {i + 1} 설명",
-                key=f"img_desc_{i}",
-                placeholder="예: 카페 내부 인테리어 사진",
-            )
-            image_descriptions.append(desc)
+    image_descriptions = []
+    if uploaded_images:
+        st.caption("각 이미지에 대한 간단한 설명을 입력하세요.")
+        for i, img_file in enumerate(uploaded_images):
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.image(img_file, width=200)
+            with col2:
+                desc = st.text_input(
+                    f"이미지 {i + 1} 설명",
+                    key=f"img_desc_{i}",
+                    placeholder="예: 카페 내부 인테리어 사진",
+                )
+                image_descriptions.append(desc)
 
 # ── 초안 생성 ────────────────────────────────────────────────
-st.divider()
-
 if st.button("🚀 초안 생성", type="primary", width="stretch"):
     if not target_keyword:
         st.error("타겟 키워드를 입력하세요.")
@@ -62,15 +60,18 @@ if st.button("🚀 초안 생성", type="primary", width="stretch"):
 
         # 이미지 처리
         image_bytes_list = []
+        img_descs = []
         if uploaded_images:
             for img_file in uploaded_images:
                 raw = img_file.read()
                 resized = resize_image(raw)
                 image_bytes_list.append(resized)
+            img_descs = image_descriptions
+        else:
+            img_descs = []
 
-        # 이미지 HTML 태그 생성 (SEO 최적화 ALT 텍스트 포함)
         img_html_tags = (
-            build_image_html(image_bytes_list, image_descriptions, target_keyword)
+            build_image_html(image_bytes_list, img_descs, target_keyword)
             if image_bytes_list
             else []
         )
@@ -79,16 +80,20 @@ if st.button("🚀 초안 생성", type="primary", width="stretch"):
             model = st.session_state.get("llm_model", "qwen3.5:27b")
             llm_client = LLMClient(model=model)
 
-            st.caption("생성 중... (페이지를 이동하면 중단됩니다)")
+            with st.spinner("블로그 글 생성 중..."):
+                stream = generate_draft_stream(
+                    llm_client=llm_client,
+                    target_keyword=target_keyword,
+                    image_descriptions=img_descs,
+                    reference_posts=references,
+                )
 
-            stream = generate_draft_stream(
-                llm_client=llm_client,
-                target_keyword=target_keyword,
-                image_descriptions=image_descriptions,
-                reference_posts=references,
-            )
+                # 스트리밍 수집 (UI에 raw 표시 안 함)
+                raw_chunks = []
+                for token in stream:
+                    raw_chunks.append(token)
 
-            raw_text = st.write_stream(stream)
+                raw_text = "".join(raw_chunks)
 
             result = _parse_json_response(raw_text)
 
@@ -96,7 +101,7 @@ if st.button("🚀 초안 생성", type="primary", width="stretch"):
             st.session_state.generated = result
             st.session_state.image_bytes_list = image_bytes_list
             st.session_state.image_html_tags = img_html_tags
-            st.session_state.image_descriptions = image_descriptions
+            st.session_state.image_descriptions = img_descs
             st.session_state.target_keyword = target_keyword
             st.session_state.revision_history = [result.copy()]
 
@@ -108,14 +113,57 @@ if st.button("🚀 초안 생성", type="primary", width="stretch"):
                 encoding="utf-8",
             )
 
-            st.success("초안 생성 완료! '미리보기' 페이지에서 확인하세요.")
+            st.rerun()
 
         except Exception as e:
             st.error(f"생성 실패: {e}")
 
-# ── 현재 생성 상태 표시 ─────────────────────────────────────
+# ── 블로그 스타일 미리보기 ──────────────────────────────────
 if st.session_state.get("generated"):
     gen = st.session_state.generated
+    image_html_tags = st.session_state.get("image_html_tags", [])
+
     st.divider()
-    st.info(f"생성된 초안: **{gen.get('title', '제목 없음')}**")
-    st.caption("'미리보기' 페이지에서 전체 내용을 확인하고 수정/업로드할 수 있습니다.")
+
+    # 제목
+    st.markdown(f"## {gen.get('title', '')}")
+
+    # 태그
+    tags = gen.get("tags", [])
+    if tags:
+        st.markdown(" ".join([f"`#{t}`" for t in tags]))
+
+    st.divider()
+
+    # 본문 — 선택/복사 가능한 블로그 스타일 렌더링
+    content_html = gen.get("content", "")
+    if image_html_tags:
+        content_html = NaverPublisher.inject_images(content_html, image_html_tags)
+
+    st.markdown(content_html, unsafe_allow_html=True)
+
+    # 이미지 다운로드
+    image_bytes_list = st.session_state.get("image_bytes_list", [])
+    if image_bytes_list:
+        st.divider()
+        st.subheader("🖼️ 이미지 다운로드")
+        st.caption("네이버 블로그 에디터에서 이미지를 직접 업로드하세요.")
+        img_cols = st.columns(min(len(image_bytes_list), 4))
+        for i, img_bytes in enumerate(image_bytes_list):
+            with img_cols[i % 4]:
+                st.image(img_bytes, width=150)
+                st.download_button(
+                    f"이미지 {i + 1}",
+                    data=img_bytes,
+                    file_name=f"blog_image_{i + 1}.jpg",
+                    mime="image/jpeg",
+                    key=f"dl_img_{i}",
+                )
+
+    st.divider()
+
+    if st.button("🔄 재생성", width="stretch"):
+        st.session_state.generated = None
+        st.rerun()
+
+    st.caption("SEO 분석 및 최적화는 '미리보기' 탭에서 확인하세요.")

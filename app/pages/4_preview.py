@@ -93,17 +93,19 @@ if seo_optimize:
                 model = st.session_state.get("llm_model", "qwen3.5:27b")
                 llm_client = LLMClient(model=model)
 
-                st.caption("SEO 최적화 중...")
+                with st.spinner("SEO 최적화 중..."):
+                    stream = seo_optimize_draft_stream(
+                        llm_client=llm_client,
+                        original=gen,
+                        seo_feedback=seo_feedback,
+                        target_keyword=target_keyword,
+                        reference_posts=references,
+                    )
+                    raw_chunks = []
+                    for token in stream:
+                        raw_chunks.append(token)
+                    raw_text = "".join(raw_chunks)
 
-                stream = seo_optimize_draft_stream(
-                    llm_client=llm_client,
-                    original=gen,
-                    seo_feedback=seo_feedback,
-                    target_keyword=target_keyword,
-                    reference_posts=references,
-                )
-
-                raw_text = st.write_stream(stream)
                 optimized = _parse_json_response(raw_text)
 
                 st.session_state.generated = optimized
@@ -174,55 +176,35 @@ if st.button("📝 수정 반영", width="stretch"):
             model = st.session_state.get("llm_model", "qwen3.5:27b")
             llm_client = LLMClient(model=model)
 
-            rev_stream_col, rev_stop_col = st.columns([4, 1])
-            with rev_stream_col:
-                st.caption("수정 중...")
-            with rev_stop_col:
-                rev_stop_btn = st.button("⏹ 중지", key="stop_revise")
+            with st.spinner("수정 중..."):
+                stream = revise_draft_stream(
+                    llm_client=llm_client,
+                    original=gen,
+                    instruction=revision_text,
+                    reference_posts=references,
+                )
+                raw_chunks = []
+                for token in stream:
+                    raw_chunks.append(token)
+                raw_text = "".join(raw_chunks)
 
-            stream_area = st.empty()
-            raw_chunks = []
-            was_stopped = False
+            revised = _parse_json_response(raw_text)
 
-            stream = revise_draft_stream(
-                llm_client=llm_client,
-                original=gen,
-                instruction=revision_text,
-                reference_posts=references,
+            st.session_state.generated = revised
+            history = st.session_state.get("revision_history", [])
+            history.append(revised.copy())
+            st.session_state.revision_history = history
+
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+            history_path = HISTORY_DIR / f"{ts}_revised.json"
+            history_path.write_text(
+                json.dumps(revised, ensure_ascii=False, indent=2),
+                encoding="utf-8",
             )
 
-            for token in stream:
-                if rev_stop_btn:
-                    was_stopped = True
-                    break
-                raw_chunks.append(token)
-                stream_area.code("".join(raw_chunks), language=None)
-
-            raw_text = "".join(raw_chunks)
-            stream_area.empty()
-
-            if was_stopped and not raw_text.strip():
-                st.warning("수정이 중단되었습니다.")
-            else:
-                revised = _parse_json_response(raw_text)
-                if was_stopped:
-                    st.warning("중단되어 불완전한 결과일 수 있습니다.")
-
-                st.session_state.generated = revised
-                history = st.session_state.get("revision_history", [])
-                history.append(revised.copy())
-                st.session_state.revision_history = history
-
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-                history_path = HISTORY_DIR / f"{ts}_revised.json"
-                history_path.write_text(
-                    json.dumps(revised, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
-
-                st.success("수정 완료!")
-                st.rerun()
+            st.success("수정 완료!")
+            st.rerun()
         except Exception as e:
             st.error(f"수정 실패: {e}")
 
