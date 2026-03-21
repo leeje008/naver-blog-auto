@@ -267,15 +267,62 @@ def seo_optimize_draft_stream(
     )
 
 
-def _parse_json_response(raw: str) -> dict:
-    """LLM 응답에서 JSON 추출. 실패 시 fallback."""
+def _strip_markdown_fences(raw: str) -> str:
+    """마크다운 코드블록 fence 제거."""
+    text = raw.strip()
+    # ```json ... ``` 또는 ``` ... ``` 제거
+    text = re.sub(r"^```(?:json)?\s*\n?", "", text)
+    text = re.sub(r"\n?```\s*$", "", text)
+    return text.strip()
+
+
+def _try_repair_json(text: str) -> dict | None:
+    """불완전한 JSON 복구 시도 (응답 잘림 대응)."""
+    # 닫히지 않은 문자열 닫기
+    if text.count('"') % 2 == 1:
+        text += '"'
+
+    # 닫히지 않은 배열/객체 닫기
+    open_brackets = text.count("[") - text.count("]")
+    open_braces = text.count("{") - text.count("}")
+
+    text += "]" * max(0, open_brackets)
+    text += "}" * max(0, open_braces)
+
     try:
-        return json.loads(raw)
+        return json.loads(text)
     except json.JSONDecodeError:
-        match = re.search(r"\{[\s\S]*\}", raw)
-        if match:
-            try:
-                return json.loads(match.group())
-            except json.JSONDecodeError:
-                pass
-        return {"title": "", "content": raw, "tags": [], "summary": ""}
+        return None
+
+
+def _parse_json_response(raw: str) -> dict:
+    """LLM 응답에서 JSON 추출. 마크다운 fence + 불완전 JSON 대응."""
+    # 1) 마크다운 fence 제거
+    cleaned = _strip_markdown_fences(raw)
+
+    # 2) 직접 파싱 시도
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # 3) 첫 번째 { ~ 마지막 } 범위 추출
+    first_brace = cleaned.find("{")
+    last_brace = cleaned.rfind("}")
+    if first_brace != -1 and last_brace > first_brace:
+        subset = cleaned[first_brace:last_brace + 1]
+        try:
+            return json.loads(subset)
+        except json.JSONDecodeError:
+            pass
+
+    # 4) 불완전 JSON 복구 시도 (응답 잘림)
+    if first_brace != -1:
+        partial = cleaned[first_brace:]
+        repaired = _try_repair_json(partial)
+        if repaired:
+            logger.warning("불완전 JSON 복구 성공")
+            return repaired
+
+    # 5) 최종 fallback
+    return {"title": "", "content": raw, "tags": [], "summary": ""}

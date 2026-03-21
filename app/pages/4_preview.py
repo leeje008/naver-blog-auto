@@ -94,8 +94,6 @@ if seo_optimize:
                 llm_client = LLMClient(model=model)
 
                 st.caption("SEO 최적화 중...")
-                stream_area = st.empty()
-                raw_chunks = []
 
                 stream = seo_optimize_draft_stream(
                     llm_client=llm_client,
@@ -105,13 +103,7 @@ if seo_optimize:
                     reference_posts=references,
                 )
 
-                for token in stream:
-                    raw_chunks.append(token)
-                    stream_area.code("".join(raw_chunks), language=None)
-
-                raw_text = "".join(raw_chunks)
-                stream_area.empty()
-
+                raw_text = st.write_stream(stream)
                 optimized = _parse_json_response(raw_text)
 
                 st.session_state.generated = optimized
@@ -119,7 +111,6 @@ if seo_optimize:
                 history.append(optimized.copy())
                 st.session_state.revision_history = history
 
-                # 이력 저장
                 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
                 HISTORY_DIR.mkdir(parents=True, exist_ok=True)
                 history_path = HISTORY_DIR / f"{ts}_seo.json"
@@ -183,9 +174,15 @@ if st.button("📝 수정 반영", width="stretch"):
             model = st.session_state.get("llm_model", "qwen3.5:27b")
             llm_client = LLMClient(model=model)
 
-            st.caption("수정 중...")
+            rev_stream_col, rev_stop_col = st.columns([4, 1])
+            with rev_stream_col:
+                st.caption("수정 중...")
+            with rev_stop_col:
+                rev_stop_btn = st.button("⏹ 중지", key="stop_revise")
+
             stream_area = st.empty()
             raw_chunks = []
+            was_stopped = False
 
             stream = revise_draft_stream(
                 llm_client=llm_client,
@@ -195,30 +192,37 @@ if st.button("📝 수정 반영", width="stretch"):
             )
 
             for token in stream:
+                if rev_stop_btn:
+                    was_stopped = True
+                    break
                 raw_chunks.append(token)
                 stream_area.code("".join(raw_chunks), language=None)
 
             raw_text = "".join(raw_chunks)
             stream_area.empty()
 
-            revised = _parse_json_response(raw_text)
+            if was_stopped and not raw_text.strip():
+                st.warning("수정이 중단되었습니다.")
+            else:
+                revised = _parse_json_response(raw_text)
+                if was_stopped:
+                    st.warning("중단되어 불완전한 결과일 수 있습니다.")
 
-            st.session_state.generated = revised
-            history = st.session_state.get("revision_history", [])
-            history.append(revised.copy())
-            st.session_state.revision_history = history
+                st.session_state.generated = revised
+                history = st.session_state.get("revision_history", [])
+                history.append(revised.copy())
+                st.session_state.revision_history = history
 
-            # 이력 저장
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-            history_path = HISTORY_DIR / f"{ts}_revised.json"
-            history_path.write_text(
-                json.dumps(revised, ensure_ascii=False, indent=2),
-                encoding="utf-8",
-            )
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+                history_path = HISTORY_DIR / f"{ts}_revised.json"
+                history_path.write_text(
+                    json.dumps(revised, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
 
-            st.success("수정 완료!")
-            st.rerun()
+                st.success("수정 완료!")
+                st.rerun()
         except Exception as e:
             st.error(f"수정 실패: {e}")
 

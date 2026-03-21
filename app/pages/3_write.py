@@ -79,9 +79,7 @@ if st.button("🚀 초안 생성", type="primary", width="stretch"):
             model = st.session_state.get("llm_model", "qwen3.5:27b")
             llm_client = LLMClient(model=model)
 
-            st.caption("생성 중...")
-            stream_area = st.empty()
-            raw_chunks = []
+            st.caption("생성 중... (페이지를 이동하면 중단됩니다)")
 
             stream = generate_draft_stream(
                 llm_client=llm_client,
@@ -90,12 +88,7 @@ if st.button("🚀 초안 생성", type="primary", width="stretch"):
                 reference_posts=references,
             )
 
-            for token in stream:
-                raw_chunks.append(token)
-                stream_area.code("".join(raw_chunks), language=None)
-
-            raw_text = "".join(raw_chunks)
-            stream_area.empty()
+            raw_text = st.write_stream(stream)
 
             result = _parse_json_response(raw_text)
 

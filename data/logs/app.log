@@ -90,3 +90,84 @@
 [2026-03-21 14:56:49] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 레전드 점심': 2377건
 [2026-03-21 14:56:50] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 쫀득쫀득 점심': 1364건
 [2026-03-21 14:56:50] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 해산물탕': 3569건
+[2026-03-21 15:01:50] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 15:02:06] INFO core.llm_client: LLMClient 초기화: model=llama3.1:8b
+[2026-03-21 15:02:06] INFO core.keyword: 키워드 확장 시작: seed='설렁탕'
+[2026-03-21 15:02:06] DEBUG core.keyword: 자동완성 결과: 0개
+[2026-03-21 15:02:06] DEBUG core.llm_client: generate 호출: model=llama3.1:8b, prompt_len=54
+[2026-03-21 15:02:10] INFO core.llm_client: generate 완료: response_len=130
+[2026-03-21 15:02:10] INFO core.keyword: 키워드 확장 완료: 16개 (자동완성 0, LLM 16)
+[2026-03-21 15:02:10] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕': 873586건
+[2026-03-21 15:02:10] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕': 873586건
+[2026-03-21 15:02:10] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕맛': 568779건
+[2026-03-21 15:02:10] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집': 109586건
+[2026-03-21 15:02:11] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕맛집': 495679건
+[2026-03-21 15:02:11] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집추천': 31203건
+[2026-03-21 15:02:11] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕맛집추천': 30460건
+[2026-03-21 15:02:11] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집순대': 4491건
+[2026-03-21 15:02:11] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕맛집순대': 48481건
+[2026-03-21 15:02:11] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집전화번호': 7086건
+[2026-03-21 15:02:11] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕맛집가격': 148356건
+[2026-03-21 15:02:11] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집가길': 373건
+[2026-03-21 15:02:12] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕맛집가길': 2143건
+[2026-03-21 15:02:12] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집영양제': 270건
+[2026-03-21 15:02:12] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕맛집영양제': 966건
+[2026-03-21 15:02:12] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집영양질': 0건
+[2026-03-21 15:02:12] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕맛집영양질': 0건
+[2026-03-21 15:02:48] INFO core.llm_client: LLMClient 초기화: model=llama3.1:8b
+[2026-03-21 15:02:48] INFO core.keyword: 키워드 확장 시작: seed='화장품'
+[2026-03-21 15:02:48] DEBUG core.keyword: 자동완성 결과: 0개
+[2026-03-21 15:02:48] DEBUG core.llm_client: generate 호출: model=llama3.1:8b, prompt_len=54
+[2026-03-21 15:02:50] INFO core.llm_client: generate 완료: response_len=128
+[2026-03-21 15:02:50] INFO core.keyword: 키워드 확장 완료: 16개 (자동완성 0, LLM 16)
+[2026-03-21 15:02:50] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품': 10940931건
+[2026-03-21 15:02:50] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품': 10940931건
+[2026-03-21 15:02:51] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품추천': 346526건
+[2026-03-21 15:02:51] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품리뷰': 1093004건
+[2026-03-21 15:02:51] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품부담금': 11178건
+[2026-03-21 15:02:51] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품부담금제도': 2295건
+[2026-03-21 15:02:51] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품가격': 2420962건
+[2026-03-21 15:02:51] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품추천사이트': 12322건
+[2026-03-21 15:02:51] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품구매': 2466815건
+[2026-03-21 15:02:52] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품추천받기': 6170건
+[2026-03-21 15:02:52] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품브랜드': 2228778건
+[2026-03-21 15:02:52] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품상품': 1024769건
+[2026-03-21 15:02:52] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품가격비교': 384775건
+[2026-03-21 15:02:52] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품구매패턴': 65214건
+[2026-03-21 15:02:52] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품마케팅': 352369건
+[2026-03-21 15:02:52] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품브랜드리뷰': 567건
+[2026-03-21 15:02:52] DEBUG core.keyword: 블로그 검색 수 조회 keyword='화장품추천순위': 9514건
+[2026-03-21 15:03:16] INFO core.llm_client: LLMClient 초기화: model=gemma3:27b
+[2026-03-21 15:03:16] DEBUG core.llm_client: generate_stream 호출: model=gemma3:27b
+[2026-03-21 15:08:56] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-21 15:08:56] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-21 15:10:16] INFO core.llm_client: LLMClient 초기화: model=llama3.1:8b
+[2026-03-21 15:10:16] INFO core.keyword: 키워드 확장 시작: seed='설렁탕 맛집, 국밥'
+[2026-03-21 15:10:16] DEBUG core.keyword: 자동완성 결과: 0개
+[2026-03-21 15:10:16] DEBUG core.llm_client: generate 호출: model=llama3.1:8b, prompt_len=61
+[2026-03-21 15:10:20] INFO core.llm_client: generate 완료: response_len=158
+[2026-03-21 15:10:20] INFO core.keyword: 키워드 확장 완료: 16개 (자동완성 0, LLM 16)
+[2026-03-21 15:10:20] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집, 국밥': 166988건
+[2026-03-21 15:10:20] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집': 495681건
+[2026-03-21 15:10:21] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집': 109586건
+[2026-03-21 15:10:21] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집 추천': 30460건
+[2026-03-21 15:10:21] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집 순위': 4348건
+[2026-03-21 15:10:21] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집 추천': 31203건
+[2026-03-21 15:10:21] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집TOP10': 1273건
+[2026-03-21 15:10:21] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집 맛집': 59192건
+[2026-03-21 15:10:21] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 먹는법': 24589건
+[2026-03-21 15:10:21] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집 이름': 62375건
+[2026-03-21 15:10:21] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집 인기': 7109건
+[2026-03-21 15:10:22] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집 가는법': 6193건
+[2026-03-21 15:10:22] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집 주소': 10694건
+[2026-03-21 15:10:22] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집 근처': 27894건
+[2026-03-21 15:10:22] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집 추천순위': 491건
+[2026-03-21 15:10:22] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕 맛집 가이드': 8340건
+[2026-03-21 15:10:22] DEBUG core.keyword: 블로그 검색 수 조회 keyword='설렁탕집 리뷰': 7817건
+[2026-03-21 15:10:39] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b
+[2026-03-21 15:10:39] DEBUG core.llm_client: generate_stream 호출: model=qwen3.5:27b
+[2026-03-21 15:12:38] INFO core.llm_client: LLMClient 초기화: model=gemma3:27b
+[2026-03-21 15:12:38] DEBUG core.llm_client: generate_stream 호출: model=gemma3:27b
+[2026-03-21 15:14:12] INFO core.llm_client: LLMClient 초기화: model=llama3.1:8b
+[2026-03-21 15:14:12] DEBUG core.llm_client: generate_stream 호출: model=llama3.1:8b
+[2026-03-21 15:26:41] INFO core.llm_client: LLMClient 초기화: model=qwen3.5:27b

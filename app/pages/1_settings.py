@@ -12,32 +12,6 @@ load_dotenv()
 
 st.header("⚙️ 설정")
 
-# ── 네이버 검색 API 설정 ─────────────────────────────────────
-st.subheader("🔍 네이버 검색 API")
-st.caption(
-    "키워드 경쟁도 분석에 필요합니다. "
-    "[네이버 개발자센터](https://developers.naver.com/)에서 앱 등록 후 발급받으세요."
-)
-
-if "naver_client_id" not in st.session_state:
-    st.session_state.naver_client_id = os.getenv("NAVER_CLIENT_ID", "")
-if "naver_client_secret" not in st.session_state:
-    st.session_state.naver_client_secret = os.getenv("NAVER_CLIENT_SECRET", "")
-
-st.session_state.naver_client_id = st.text_input(
-    "Client ID",
-    value=st.session_state.naver_client_id,
-    placeholder="네이버 개발자센터에서 발급",
-)
-st.session_state.naver_client_secret = st.text_input(
-    "Client Secret",
-    value=st.session_state.naver_client_secret,
-    type="password",
-    placeholder="네이버 개발자센터에서 발급",
-)
-
-st.divider()
-
 # ── LLM 모델 설정 ────────────────────────────────────────────
 st.subheader("🤖 LLM 모델 설정")
 
