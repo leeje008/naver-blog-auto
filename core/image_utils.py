@@ -88,7 +88,7 @@ def build_image_html(
             if img.format:
                 ext = img.format.lower()
         except Exception:
-            pass
+            logger.debug("이미지 %d 포맷 감지 실패, jpeg으로 기본 설정", i + 1)
 
         alt_text = _build_alt_text(i, image_descriptions, target_keyword)
         html_tags.append(

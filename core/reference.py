@@ -1,12 +1,15 @@
 """레퍼런스 블로그 글 크롤링 및 관리 모듈."""
 
 import json
+import logging
 import re
 from functools import lru_cache
 from pathlib import Path
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, FeatureNotFound
+
+logger = logging.getLogger(__name__)
 
 
 REFERENCES_PATH = Path(__file__).parent.parent / "data" / "references" / "references.json"
@@ -35,7 +38,11 @@ def crawl_reference(url: str) -> dict:
     resp = requests.get(fetch_url, headers=headers, timeout=10)
     resp.raise_for_status()
 
-    soup = BeautifulSoup(resp.text, "lxml")
+    try:
+        soup = BeautifulSoup(resp.text, "lxml")
+    except FeatureNotFound:
+        logger.info("lxml 파서 미설치. html.parser로 대체합니다.")
+        soup = BeautifulSoup(resp.text, "html.parser")
 
     # 제목
     title_tag = soup.select_one(".se-title-text, .pcol1, .se_title")
@@ -48,6 +55,9 @@ def crawl_reference(url: str) -> dict:
     text_content = ""
     image_positions = []
     paragraph_idx = 0
+
+    if not content_area:
+        logger.warning("본문 영역을 찾을 수 없습니다: %s (DOM 구조 변경 가능)", url)
 
     if content_area:
         for child in content_area.children:

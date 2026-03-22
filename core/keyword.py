@@ -3,7 +3,6 @@
 import math
 import os
 import re
-from functools import lru_cache
 
 import requests
 from bs4 import BeautifulSoup
@@ -278,13 +277,3 @@ class KeywordEngine:
             logger.debug("상위 글 분석 실패 keyword='%s': %s", keyword, e)
             return {"top_post_count": 0, "avg_desc_length": 0, "quality_level": "알수없음"}
 
-    def _competition_level(self, blog_count: int | None) -> str:
-        """경쟁도 등급 판단."""
-        if blog_count is None:
-            return "알수없음"
-        if blog_count < 1000:
-            return "낮음"
-        elif blog_count < 5000:
-            return "중간"
-        else:
-            return "높음"

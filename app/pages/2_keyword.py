@@ -18,8 +18,9 @@ seed_keyword = st.text_input(
 )
 
 if st.button("🔍 키워드 분석", type="primary", width="stretch"):
-    if not seed_keyword:
-        st.error("키워드를 입력하세요.")
+    seed_keyword = seed_keyword.strip()
+    if not seed_keyword or len(seed_keyword) < 2:
+        st.error("2자 이상의 키워드를 입력하세요.")
     else:
         model = st.session_state.get("keyword_model", "llama3.1:8b")
         llm_client = LLMClient(model=model)

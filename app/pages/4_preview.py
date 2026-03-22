@@ -46,7 +46,7 @@ score_col, grade_col, action_col = st.columns([1, 1, 1])
 with score_col:
     prev_score = st.session_state.get("seo_before")
     delta = score - prev_score if prev_score is not None else None
-    st.metric("SEO 점수", f"{score}/100", delta=f"{delta:+d}점" if delta else None)
+    st.metric("SEO 점수", f"{score}/100", delta=f"{delta:+}점" if delta is not None else None)
 with grade_col:
     st.metric("등급", f"{grade_icon} {grade}")
 with action_col:

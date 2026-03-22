@@ -35,6 +35,16 @@ with st.expander("🖼️ 이미지 업로드 (선택사항)"):
 
     image_descriptions = []
     if uploaded_images:
+        # 이미지 수 변경 시 orphan 세션 키 정리
+        for key in list(st.session_state.keys()):
+            if key.startswith("img_desc_"):
+                try:
+                    idx = int(key.split("_")[-1])
+                    if idx >= len(uploaded_images):
+                        del st.session_state[key]
+                except ValueError:
+                    pass
+
         auto_analyze = st.toggle("🔍 Vision 모델로 이미지 자동 분석", value=False)
 
         if auto_analyze and st.button("📷 전체 이미지 분석", key="btn_analyze_all"):
@@ -46,7 +56,11 @@ with st.expander("🖼️ 이미지 업로드 (선택사항)"):
                     raw = img_file.read()
                     img_file.seek(0)
                     desc = analyze_image(vision_client, raw, kw)
-                    st.session_state[f"img_desc_{i}"] = desc if desc else ""
+                    if desc:
+                        st.session_state[f"img_desc_{i}"] = desc
+                    else:
+                        st.session_state[f"img_desc_{i}"] = ""
+                        st.warning(f"이미지 {i + 1} 자동 분석 실패. 직접 입력해주세요.")
 
         st.caption("각 이미지에 대한 설명을 입력하거나 자동 분석 결과를 수정하세요.")
         for i, img_file in enumerate(uploaded_images):
