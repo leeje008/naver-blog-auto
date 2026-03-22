@@ -7,9 +7,9 @@ from pathlib import Path
 import streamlit as st
 
 from core.generator import generate_draft_stream, _parse_json_response
-from core.image_utils import build_image_html, resize_image
+from core.image_utils import analyze_image, build_image_html, resize_image
 from core.llm_client import LLMClient
-from core.publisher import NaverPublisher
+from core.publisher import inject_images
 from core.reference import load_references
 
 HISTORY_DIR = Path(__file__).parent.parent.parent / "data" / "history"
@@ -35,15 +35,30 @@ with st.expander("🖼️ 이미지 업로드 (선택사항)"):
 
     image_descriptions = []
     if uploaded_images:
-        st.caption("각 이미지에 대한 간단한 설명을 입력하세요.")
+        auto_analyze = st.toggle("🔍 Vision 모델로 이미지 자동 분석", value=False)
+
+        if auto_analyze and st.button("📷 전체 이미지 분석", key="btn_analyze_all"):
+            model = st.session_state.get("llm_model", "qwen3.5:27b")
+            vision_client = LLMClient(model=model)
+            kw = st.session_state.get("target_keyword", target_keyword)
+            for i, img_file in enumerate(uploaded_images):
+                with st.spinner(f"이미지 {i + 1} 분석 중..."):
+                    raw = img_file.read()
+                    img_file.seek(0)
+                    desc = analyze_image(vision_client, raw, kw)
+                    st.session_state[f"img_desc_{i}"] = desc if desc else ""
+
+        st.caption("각 이미지에 대한 설명을 입력하거나 자동 분석 결과를 수정하세요.")
         for i, img_file in enumerate(uploaded_images):
             col1, col2 = st.columns([1, 2])
             with col1:
                 st.image(img_file, width=200)
             with col2:
+                default_desc = st.session_state.get(f"img_desc_{i}", "")
                 desc = st.text_input(
                     f"이미지 {i + 1} 설명",
                     key=f"img_desc_{i}",
+                    value=default_desc,
                     placeholder="예: 카페 내부 인테리어 사진",
                 )
                 image_descriptions.append(desc)
@@ -138,7 +153,7 @@ if st.session_state.get("generated"):
     # 본문 — 선택/복사 가능한 블로그 스타일 렌더링
     content_html = gen.get("content", "")
     if image_html_tags:
-        content_html = NaverPublisher.inject_images(content_html, image_html_tags)
+        content_html = inject_images(content_html, image_html_tags)
 
     st.markdown(content_html, unsafe_allow_html=True)
 

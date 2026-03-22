@@ -12,7 +12,7 @@ from core.generator import (
     seo_optimize_draft_stream,
 )
 from core.llm_client import LLMClient
-from core.publisher import NaverPublisher
+from core.publisher import inject_images
 from core.reference import load_references
 from core.seo_validator import validate_seo
 
@@ -44,7 +44,9 @@ grade_icon = grade_colors.get(grade, "⚪")
 # 종합 점수 표시
 score_col, grade_col, action_col = st.columns([1, 1, 1])
 with score_col:
-    st.metric("SEO 점수", f"{score}/100")
+    prev_score = st.session_state.get("seo_before")
+    delta = score - prev_score if prev_score is not None else None
+    st.metric("SEO 점수", f"{score}/100", delta=f"{delta:+d}점" if delta else None)
 with grade_col:
     st.metric("등급", f"{grade_icon} {grade}")
 with action_col:
@@ -121,7 +123,14 @@ if seo_optimize:
                     encoding="utf-8",
                 )
 
-                st.success("SEO 최적화 완료!")
+                # 최적화 전후 점수 비교
+                new_seo = validate_seo(optimized, target_keyword, image_count)
+                delta = new_seo["score"] - score
+                st.success(
+                    f"SEO 최적화 완료! "
+                    f"점수: {score} → {new_seo['score']} ({'+' if delta > 0 else ''}{delta}점)"
+                )
+                st.session_state.seo_before = score
                 st.rerun()
             except Exception as e:
                 st.error(f"SEO 최적화 실패: {e}")
@@ -140,7 +149,7 @@ st.divider()
 # 이미지 삽입된 본문
 content_html = gen.get("content", "")
 if image_html_tags:
-    content_html = NaverPublisher.inject_images(content_html, image_html_tags)
+    content_html = inject_images(content_html, image_html_tags)
 
 st.html(content_html)
 

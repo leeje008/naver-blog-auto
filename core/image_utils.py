@@ -98,6 +98,40 @@ def build_image_html(
     return html_tags
 
 
+def analyze_image(llm_client, image_bytes: bytes, target_keyword: str = "") -> str:
+    """Vision 모델로 이미지를 분석하여 블로그용 설명을 자동 생성.
+
+    Args:
+        llm_client: LLMClient 인스턴스 (Vision 지원 모델 필요)
+        image_bytes: 이미지 바이트
+        target_keyword: 타겟 키워드 (설명에 자연스럽게 반영)
+
+    Returns:
+        이미지 설명 문자열 (30~80자)
+    """
+    system_prompt = (
+        "당신은 네이버 블로그 이미지 설명 전문가입니다. "
+        "이미지를 보고 블로그 글에 어울리는 간결한 설명을 한국어로 작성하세요. "
+        "30~80자 이내로 작성하고, 추가 설명 없이 설명만 출력하세요."
+    )
+    keyword_hint = f" 타겟 키워드 '{target_keyword}'와 관련지어 설명해주세요." if target_keyword else ""
+    user_prompt = f"이 이미지를 블로그 글에 사용할 설명을 작성해주세요.{keyword_hint}"
+
+    try:
+        result = llm_client.generate_with_image(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            images=[image_bytes],
+        )
+        desc = result.strip().strip('"').strip("'")
+        if len(desc) > 80:
+            desc = desc[:77] + "..."
+        return desc
+    except Exception as e:
+        logger.warning("Vision 이미지 분석 실패: %s", e)
+        return ""
+
+
 def _build_alt_text(
     index: int,
     descriptions: list[str] | None,

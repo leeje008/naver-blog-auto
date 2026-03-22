@@ -117,7 +117,37 @@ if "keyword_results" in st.session_state and st.session_state.keyword_results:
     keyword_options = [r["keyword"] for r in results]
     selected = st.selectbox("타겟 키워드 선택", keyword_options)
 
-    if st.button("✅ 이 키워드로 글 작성하기", width="stretch"):
+    # 상위 포스트 분석
+    if st.button("🔎 상위 포스트 경쟁 분석", key="btn_top_posts"):
+        model = st.session_state.get("keyword_model", "llama3.1:8b")
+        llm_client = LLMClient(model=model)
+        engine = KeywordEngine(
+            llm_client,
+            naver_client_id=st.session_state.get("naver_client_id", ""),
+            naver_client_secret=st.session_state.get("naver_client_secret", ""),
+        )
+        with st.spinner(f"'{selected}' 상위 포스트 분석 중..."):
+            top_analysis = engine.analyze_top_posts(selected)
+
+        quality_colors = {"높음": "🔴", "중간": "🟡", "낮음": "🟢", "알수없음": "⚪"}
+        quality_icon = quality_colors.get(top_analysis["quality_level"], "⚪")
+
+        col_a, col_b, col_c = st.columns(3)
+        with col_a:
+            st.metric("상위 포스트 수", f"{top_analysis['top_post_count']}개")
+        with col_b:
+            st.metric("평균 설명 길이", f"{top_analysis['avg_desc_length']}자")
+        with col_c:
+            st.metric("경쟁 품질", f"{quality_icon} {top_analysis['quality_level']}")
+
+        if top_analysis["quality_level"] == "낮음":
+            st.success("상위 포스트 품질이 낮아 진입하기 좋은 키워드입니다!")
+        elif top_analysis["quality_level"] == "높음":
+            st.warning("상위 포스트 품질이 높아 더 많은 노력이 필요합니다.")
+
+    st.divider()
+
+    if st.button("✅ 이 키워드로 글 작성하기", type="primary", width="stretch"):
         st.session_state.target_keyword = selected
         st.success(f"타겟 키워드 설정: **{selected}**")
         st.info("사이드바에서 '글 작성' 페이지로 이동하세요.")
