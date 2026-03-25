@@ -4,6 +4,9 @@ __pycache__/
 *.pyc
 data/references/
 data/history/
+data/config.json
+data/keywords/
+data/templates/
 data/style_profile.json
 .streamlit/
 legacy/

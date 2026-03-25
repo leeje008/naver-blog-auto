@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from core.keyword import KeywordEngine
+from core.keyword_history import KeywordHistoryManager
 from core.llm_client import LLMClient
 
 st.header("🔑 블루오션 키워드 추천")
@@ -78,6 +79,10 @@ if st.button("🔍 키워드 분석", type="primary", width="stretch"):
 
         st.session_state.keyword_results = results
         st.session_state.seed_blog_count = seed_blog_count
+        st.session_state._keyword_seed = seed_keyword
+
+        # 키워드 이력 저장
+        KeywordHistoryManager().save_analysis(seed_keyword, results)
         st.success(f"분석 완료! {len(results)}개 키워드")
         if seed_blog_count:
             st.info(f"기준: '{seed_keyword}' 블로그 수 **{seed_blog_count:,}건**")
@@ -150,5 +155,20 @@ if "keyword_results" in st.session_state and st.session_state.keyword_results:
 
     if st.button("✅ 이 키워드로 글 작성하기", type="primary", width="stretch"):
         st.session_state.target_keyword = selected
+        # 키워드 이력에 '사용됨' 표시
+        seed = st.session_state.get("_keyword_seed", "")
+        if seed:
+            KeywordHistoryManager().mark_used(seed, selected)
         st.success(f"타겟 키워드 설정: **{selected}**")
         st.info("사이드바에서 '글 작성' 페이지로 이동하세요.")
+
+    # 키워드 분석 이력
+    st.divider()
+    kw_history = KeywordHistoryManager().load_all()
+    if kw_history:
+        with st.expander(f"📜 키워드 분석 이력 ({len(kw_history)}건)"):
+            for item in kw_history[:10]:
+                used = "✅" if item.get("used_for_post") else ""
+                selected_kw = item.get("selected_keyword", "")
+                label = f"{used} {item.get('seed', '')} → {selected_kw or '미선택'} ({item.get('timestamp', '')[:10]})"
+                st.caption(label)

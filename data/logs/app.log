@@ -225,3 +225,17 @@
 [2026-03-21 15:42:31] DEBUG core.llm_client: generate_stream 호출: model=gemma3:27b
 [2026-03-21 15:42:57] INFO core.llm_client: LLMClient 초기화: model=gemma3:27b
 [2026-03-21 15:42:57] DEBUG core.llm_client: generate_stream 호출: model=gemma3:27b
+[2026-03-22 15:04:13] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-22 15:04:13] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-22 19:19:54] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-22 19:19:54] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-22 19:37:01] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-22 19:37:01] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-22 19:37:41] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-22 19:37:41] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-22 19:38:20] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-22 19:38:20] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-25 20:29:20] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-25 20:29:20] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-25 20:36:35] WARNING core.generator: 불완전 JSON 복구 성공
+[2026-03-25 20:36:35] WARNING core.generator: 불완전 JSON 복구 성공

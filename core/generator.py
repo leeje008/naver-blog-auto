@@ -238,15 +238,29 @@ def revise_draft_stream(
     )
 
 
+_STRATEGY_PROMPT_MAP = {
+    "balanced": "seo_optimization",
+    "depth": "seo_strategy_depth",
+    "experience": "seo_strategy_experience",
+    "human": "seo_strategy_human",
+}
+
+
 def seo_optimize_draft_stream(
     llm_client: LLMClient,
     original: dict,
     seo_feedback: str,
     target_keyword: str,
     reference_posts: list[dict] | None = None,
+    strategy: str = "balanced",
 ) -> Generator[str, None, None]:
-    """스트리밍 방식으로 SEO 최적화 재작성. 토큰 단위로 yield."""
-    prompt_template = load_prompt("seo_optimization")
+    """스트리밍 방식으로 SEO 최적화 재작성. 토큰 단위로 yield.
+
+    Args:
+        strategy: "balanced" | "depth" | "experience" | "human"
+    """
+    prompt_name = _STRATEGY_PROMPT_MAP.get(strategy, "seo_optimization")
+    prompt_template = load_prompt(prompt_name)
 
     ref_text, img_pos_text = _build_reference_context(reference_posts or [])
 

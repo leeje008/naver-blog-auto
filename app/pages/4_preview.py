@@ -14,7 +14,7 @@ from core.generator import (
 from core.llm_client import LLMClient
 from core.publisher import inject_images
 from core.reference import load_references
-from core.seo_validator import validate_seo
+from core.seo_validator import PROFILE_LABELS, SEO_PROFILES, validate_seo
 
 HISTORY_DIR = Path(__file__).parent.parent.parent / "data" / "history"
 
@@ -33,7 +33,21 @@ references = load_references()  # 톤 & 매너 유지용
 # ── SEO 대시보드 ──────────────────────────────────────────────
 st.subheader("📊 SEO 분석")
 
-seo_report = validate_seo(gen, target_keyword, image_count)
+# 프로파일 선택
+profile_options = list(PROFILE_LABELS.keys())
+profile_labels_display = list(PROFILE_LABELS.values())
+default_profile = st.session_state.get("seo_profile", "balanced")
+default_idx = profile_options.index(default_profile) if default_profile in profile_options else 0
+
+selected_profile = st.selectbox(
+    "SEO 프로파일",
+    profile_options,
+    index=default_idx,
+    format_func=lambda x: PROFILE_LABELS.get(x, x),
+    key="preview_seo_profile",
+)
+
+seo_report = validate_seo(gen, target_keyword, image_count, profile=selected_profile)
 score = seo_report["score"]
 grade = seo_report["grade"]
 
@@ -52,25 +66,56 @@ with grade_col:
 with action_col:
     seo_optimize = st.button("🚀 SEO 최적화", width="stretch")
 
-# 항목별 체크리스트
+# 최적화 전략 선택
+strategy_map = {
+    "균형 최적화": "balanced",
+    "정보 충실도 강화": "depth",
+    "경험 주입": "experience",
+    "AI 안전성 강화": "human",
+}
+strategy_descriptions = {
+    "균형 최적화": "SEO 분석 결과의 낮은 점수 항목을 전반적으로 개선",
+    "정보 충실도 강화": "수치, 리스트, 비교 분석 등 구체적 데이터 추가",
+    "경험 주입": "개인 경험, 감정 표현, 1인칭 시점 추가",
+    "AI 안전성 강화": "반복 패턴 제거, 구어체 추가, 자연스러운 문체로 변환",
+}
+selected_strategy_label = st.selectbox(
+    "최적화 전략",
+    list(strategy_map.keys()),
+    key="seo_strategy_select",
+)
+st.caption(strategy_descriptions[selected_strategy_label])
+
+# AI 안전 경고
+ai_check = seo_report["checks"].get("ai_safety", {})
+if ai_check.get("score", 100) < 40:
+    st.error("⚠️ AI 생성 콘텐츠 탐지 위험이 높습니다. 개인 경험을 추가하고 구어체를 섞어 자연스럽게 만드세요.")
+
+# 항목별 체크리스트 (10개 항목, 4열)
 checks = seo_report["checks"]
-check_labels = {
+check_labels_map = {
     "title": "📌 제목",
     "body_length": "📏 본문 길이",
     "keyword_density": "🔑 키워드 밀도",
     "heading_structure": "📑 헤딩 구조",
     "images": "🖼️ 이미지",
     "hashtags": "#️⃣ 해시태그",
+    "readability": "📖 가독성",
+    "experience_signals": "💡 경험 정보",
+    "information_depth": "📚 정보 충실성",
+    "ai_safety": "🤖 AI 안전",
 }
 
-cols = st.columns(3)
-for i, (key, label) in enumerate(check_labels.items()):
-    check = checks[key]
+cols = st.columns(4)
+for i, (key, label) in enumerate(check_labels_map.items()):
+    check = checks.get(key)
+    if not check:
+        continue
     icon = "✅" if check["pass"] else "❌"
-    with cols[i % 3]:
+    with cols[i % 4]:
         with st.expander(f"{icon} {label} ({check['score']}점)"):
             st.caption(check["message"])
-            if check["suggestions"]:
+            if check.get("suggestions"):
                 for suggestion in check["suggestions"]:
                     st.markdown(f"- {suggestion}")
 
@@ -94,14 +139,16 @@ if seo_optimize:
             try:
                 model = st.session_state.get("llm_model", "qwen3.5:27b")
                 llm_client = LLMClient(model=model)
+                strategy_key = strategy_map.get(selected_strategy_label, "balanced")
 
-                with st.spinner("SEO 최적화 중..."):
+                with st.spinner(f"SEO 최적화 중... ({selected_strategy_label})"):
                     stream = seo_optimize_draft_stream(
                         llm_client=llm_client,
                         original=gen,
                         seo_feedback=seo_feedback,
                         target_keyword=target_keyword,
                         reference_posts=references,
+                        strategy=strategy_key,
                     )
                     raw_chunks = []
                     for token in stream:
@@ -109,6 +156,10 @@ if seo_optimize:
                     raw_text = "".join(raw_chunks)
 
                 optimized = _parse_json_response(raw_text)
+
+                # 최적화 전후 점수 비교
+                new_seo = validate_seo(optimized, target_keyword, image_count)
+                optimized["seo_score"] = new_seo["score"]
 
                 st.session_state.generated = optimized
                 history = st.session_state.get("revision_history", [])
@@ -122,9 +173,6 @@ if seo_optimize:
                     json.dumps(optimized, ensure_ascii=False, indent=2),
                     encoding="utf-8",
                 )
-
-                # 최적화 전후 점수 비교
-                new_seo = validate_seo(optimized, target_keyword, image_count)
                 delta = new_seo["score"] - score
                 st.success(
                     f"SEO 최적화 완료! "
@@ -155,18 +203,64 @@ st.html(content_html)
 
 st.divider()
 
-# ── 액션 버튼 ────────────────────────────────────────────────
-col1, col2 = st.columns(2)
+# ── 내보내기 ─────────────────────────────────────────────────
+st.subheader("📥 내보내기")
+export_cols = st.columns(4)
 
-with col1:
-    if st.button("📋 HTML 복사", type="primary", width="stretch"):
-        st.code(content_html, language="html")
-        st.info("위 HTML을 복사하여 네이버 블로그 에디터에 붙여넣으세요.")
+with export_cols[0]:
+    st.download_button(
+        "📄 HTML",
+        data=content_html,
+        file_name=f"{gen.get('title', 'blog')[:20]}.html",
+        mime="text/html",
+        key="dl_html",
+    )
 
-with col2:
+with export_cols[1]:
+    from bs4 import BeautifulSoup as BS4
+    plain_text = BS4(content_html, "html.parser").get_text("\n", strip=True)
+    st.download_button(
+        "📝 텍스트",
+        data=plain_text,
+        file_name=f"{gen.get('title', 'blog')[:20]}.txt",
+        mime="text/plain",
+        key="dl_txt",
+    )
+
+with export_cols[2]:
+    def _html_to_markdown(html: str) -> str:
+        soup = BS4(html, "html.parser")
+        md_lines = []
+        for el in soup.descendants:
+            if el.name == "h1":
+                md_lines.append(f"\n# {el.get_text(strip=True)}\n")
+            elif el.name == "h2":
+                md_lines.append(f"\n## {el.get_text(strip=True)}\n")
+            elif el.name == "h3":
+                md_lines.append(f"\n### {el.get_text(strip=True)}\n")
+            elif el.name == "p":
+                md_lines.append(f"\n{el.get_text(strip=True)}\n")
+            elif el.name == "li":
+                md_lines.append(f"- {el.get_text(strip=True)}")
+        return "\n".join(md_lines).strip()
+
+    md_text = _html_to_markdown(content_html)
+    st.download_button(
+        "📋 Markdown",
+        data=md_text,
+        file_name=f"{gen.get('title', 'blog')[:20]}.md",
+        mime="text/markdown",
+        key="dl_md",
+    )
+
+with export_cols[3]:
     if st.button("🔄 재생성", width="stretch"):
         st.session_state.generated = None
         st.rerun()
+
+with st.expander("📋 HTML 소스 보기"):
+    st.code(content_html, language="html")
+    st.info("위 HTML을 복사하여 네이버 블로그 에디터에 붙여넣으세요.")
 
 # ── 수정 요청 ────────────────────────────────────────────────
 st.divider()
@@ -198,6 +292,9 @@ if st.button("📝 수정 반영", width="stretch"):
                 raw_text = "".join(raw_chunks)
 
             revised = _parse_json_response(raw_text)
+
+            revised_seo = validate_seo(revised, target_keyword, image_count)
+            revised["seo_score"] = revised_seo["score"]
 
             st.session_state.generated = revised
             history = st.session_state.get("revision_history", [])

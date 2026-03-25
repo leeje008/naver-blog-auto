@@ -16,6 +16,34 @@ logger = get_logger(__name__)
 NAVER_SEARCH_API_URL = "https://openapi.naver.com/v1/search/blog.json"
 
 
+def validate_naver_credentials(client_id: str, client_secret: str) -> tuple[bool, str]:
+    """네이버 검색 API 키 유효성 검증.
+
+    Returns:
+        (success: bool, message: str)
+    """
+    if not client_id or not client_secret:
+        return False, "Client ID 또는 Client Secret이 비어있습니다."
+    try:
+        resp = requests.get(
+            NAVER_SEARCH_API_URL,
+            params={"query": "테스트", "display": 1},
+            headers={
+                "X-Naver-Client-Id": client_id,
+                "X-Naver-Client-Secret": client_secret,
+            },
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            return True, "연결 성공! API 키가 유효합니다."
+        elif resp.status_code in (401, 403):
+            return False, "인증 실패: API 키를 확인하세요."
+        else:
+            return False, f"연결 실패: HTTP {resp.status_code}"
+    except requests.RequestException as e:
+        return False, f"네트워크 오류: {e}"
+
+
 class KeywordEngine:
     """네이버 자동완성 + LLM 확장 + 경쟁도 조회."""
 

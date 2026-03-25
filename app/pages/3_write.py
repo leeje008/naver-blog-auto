@@ -11,6 +11,8 @@ from core.image_utils import analyze_image, build_image_html, resize_image
 from core.llm_client import LLMClient
 from core.publisher import inject_images
 from core.reference import load_references
+from core.seo_validator import validate_seo
+from core.template import TemplateManager
 
 HISTORY_DIR = Path(__file__).parent.parent.parent / "data" / "history"
 HISTORY_DIR.mkdir(parents=True, exist_ok=True)
@@ -24,6 +26,23 @@ target_keyword = st.text_input(
     value=default_keyword,
     placeholder="키워드 페이지에서 선택하거나 직접 입력",
 )
+
+# ── 템플릿 선택 ──────────────────────────────────────────────
+templates = TemplateManager().list_templates()
+selected_template = None
+if templates:
+    template_choice = st.selectbox(
+        "템플릿 (선택사항)",
+        ["없음"] + templates,
+        key="template_select",
+    )
+    if template_choice != "없음":
+        selected_template = TemplateManager().load_template(template_choice)
+        if selected_template:
+            st.caption(
+                f"구조: {selected_template.get('structure_hint', '-')} | "
+                f"톤: {selected_template.get('tone', '-')}"
+            )
 
 # ── 이미지 업로드 ────────────────────────────────────────────
 with st.expander("🖼️ 이미지 업로드 (선택사항)"):
@@ -51,16 +70,21 @@ with st.expander("🖼️ 이미지 업로드 (선택사항)"):
             model = st.session_state.get("llm_model", "qwen3.5:27b")
             vision_client = LLMClient(model=model)
             kw = st.session_state.get("target_keyword", target_keyword)
+            progress = st.progress(0, text="이미지 분석 준비 중...")
             for i, img_file in enumerate(uploaded_images):
-                with st.spinner(f"이미지 {i + 1} 분석 중..."):
-                    raw = img_file.read()
-                    img_file.seek(0)
-                    desc = analyze_image(vision_client, raw, kw)
-                    if desc:
-                        st.session_state[f"img_desc_{i}"] = desc
-                    else:
-                        st.session_state[f"img_desc_{i}"] = ""
-                        st.warning(f"이미지 {i + 1} 자동 분석 실패. 직접 입력해주세요.")
+                progress.progress(
+                    (i) / len(uploaded_images),
+                    text=f"이미지 {i + 1}/{len(uploaded_images)} 분석 중...",
+                )
+                raw = img_file.read()
+                img_file.seek(0)
+                desc = analyze_image(vision_client, raw, kw)
+                if desc:
+                    st.session_state[f"img_desc_{i}"] = desc
+                else:
+                    st.session_state[f"img_desc_{i}"] = ""
+                    st.warning(f"이미지 {i + 1} 자동 분석 실패. 직접 입력해주세요.")
+            progress.progress(1.0, text="분석 완료!")
 
         st.caption("각 이미지에 대한 설명을 입력하거나 자동 분석 결과를 수정하세요.")
         for i, img_file in enumerate(uploaded_images):
@@ -134,7 +158,10 @@ if st.button("🚀 초안 생성", type="primary", width="stretch"):
             st.session_state.target_keyword = target_keyword
             st.session_state.revision_history = [result.copy()]
 
-            # 이력 저장
+            # SEO 점수 계산 후 이력 저장
+            seo_report = validate_seo(result, target_keyword, len(image_bytes_list))
+            result["seo_score"] = seo_report["score"]
+
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             history_path = HISTORY_DIR / f"{ts}.json"
             history_path.write_text(
@@ -191,8 +218,25 @@ if st.session_state.get("generated"):
 
     st.divider()
 
-    if st.button("🔄 재생성", width="stretch"):
-        st.session_state.generated = None
-        st.rerun()
+    btn_cols = st.columns(2)
+    with btn_cols[0]:
+        if st.button("🔄 재생성", width="stretch"):
+            st.session_state.generated = None
+            st.rerun()
+    with btn_cols[1]:
+        if st.button("💾 템플릿으로 저장", width="stretch"):
+            tmpl_name = st.session_state.get("target_keyword", gen.get("title", ""))[:20]
+            if tmpl_name:
+                from bs4 import BeautifulSoup as BS4
+                headings = [h.get_text(strip=True) for h in BS4(gen.get("content", ""), "html.parser").find_all("h2")]
+                template_data = {
+                    "description": gen.get("summary", ""),
+                    "structure_hint": " → ".join(headings) if headings else "",
+                    "tag_patterns": gen.get("tags", [])[:5],
+                    "image_count_hint": len(st.session_state.get("image_bytes_list", [])),
+                    "tone": "",
+                }
+                TemplateManager().save_template(tmpl_name, template_data)
+                st.success(f"템플릿 '{tmpl_name}' 저장 완료!")
 
     st.caption("SEO 분석 및 최적화는 '미리보기' 탭에서 확인하세요.")

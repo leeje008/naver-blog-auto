@@ -1,11 +1,28 @@
 """네이버 블로그 자동 생성기 — Streamlit 엔트리포인트."""
 
 import os
+from pathlib import Path
 
 import streamlit as st
 from dotenv import load_dotenv
 
+from core.config import DEFAULT_CONFIG, load_config
+
 load_dotenv()
+
+# ── .streamlit/config.toml 자동 생성 (테마) ───────────────────
+_streamlit_dir = Path(__file__).parent.parent / ".streamlit"
+_config_toml = _streamlit_dir / "config.toml"
+if not _config_toml.exists():
+    _streamlit_dir.mkdir(parents=True, exist_ok=True)
+    _config_toml.write_text(
+        '[theme]\nprimaryColor = "#03C75A"\n'
+        'backgroundColor = "#FFFFFF"\n'
+        'secondaryBackgroundColor = "#F0F2F6"\n'
+        'textColor = "#262730"\n'
+        'font = "sans serif"\n\n'
+        "[browser]\ngatherUsageStats = false\n"
+    )
 
 st.set_page_config(
     page_title="네이버 블로그 자동 생성기",
@@ -23,6 +40,12 @@ _env_defaults = {
 for key, default in _env_defaults.items():
     if key not in st.session_state:
         st.session_state[key] = default
+
+# ── 사용자 설정(config.json) 로드 ─────────────────────────────
+_user_config = load_config()
+for key, default in DEFAULT_CONFIG.items():
+    if key not in st.session_state:
+        st.session_state[key] = _user_config.get(key, default)
 
 st.title("✍️ 네이버 블로그 자동 생성기")
 

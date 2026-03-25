@@ -5,6 +5,7 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 
+from core.config import load_config, save_config
 from core.llm_client import LLMClient
 from core.reference import crawl_reference, save_references, load_references
 
@@ -14,6 +15,8 @@ st.header("⚙️ 설정")
 
 # ── LLM 모델 설정 ────────────────────────────────────────────
 st.subheader("🤖 LLM 모델 설정")
+
+_config = load_config()
 
 available_models = []
 try:
@@ -27,34 +30,75 @@ col_model1, col_model2 = st.columns(2)
 with col_model1:
     st.caption("**글 작성 / SEO 최적화용** (고품질)")
     if available_models:
-        if "llm_model" not in st.session_state:
-            st.session_state.llm_model = available_models[0]
+        saved_llm = _config.get("llm_model", "")
+        default_llm_idx = available_models.index(saved_llm) if saved_llm in available_models else 0
         st.session_state.llm_model = st.selectbox(
-            "글 작성 모델", available_models, index=0
+            "글 작성 모델", available_models, index=default_llm_idx
         )
     else:
         st.session_state.llm_model = st.text_input(
-            "글 작성 모델 직접 입력", value="qwen3.5:27b", placeholder="qwen3.5:27b"
+            "글 작성 모델 직접 입력",
+            value=_config.get("llm_model", "qwen3.5:27b"),
+            placeholder="qwen3.5:27b",
         )
 
 with col_model2:
     st.caption("**키워드 분석용** (경량·빠름)")
     if available_models:
-        # 8b/12b 모델 우선, 없으면 첫 번째 모델
-        default_kw = next(
-            (m for m in available_models if "8b" in m or "12b" in m),
-            available_models[0],
-        )
-        default_idx = available_models.index(default_kw) if default_kw in available_models else 0
-        if "keyword_model" not in st.session_state:
-            st.session_state.keyword_model = default_kw
+        saved_kw = _config.get("keyword_model", "")
+        if saved_kw in available_models:
+            default_kw_idx = available_models.index(saved_kw)
+        else:
+            default_kw = next(
+                (m for m in available_models if "8b" in m or "12b" in m),
+                available_models[0],
+            )
+            default_kw_idx = available_models.index(default_kw)
         st.session_state.keyword_model = st.selectbox(
-            "키워드 모델", available_models, index=default_idx
+            "키워드 모델", available_models, index=default_kw_idx
         )
     else:
         st.session_state.keyword_model = st.text_input(
-            "키워드 모델 직접 입력", value="llama3.1:8b", placeholder="llama3.1:8b"
+            "키워드 모델 직접 입력",
+            value=_config.get("keyword_model", "llama3.1:8b"),
+            placeholder="llama3.1:8b",
         )
+
+st.divider()
+
+# ── 네이버 API 설정 ──────────────────────────────────────────
+st.subheader("🔗 네이버 API 설정")
+
+api_col1, api_col2 = st.columns(2)
+with api_col1:
+    naver_cid = st.text_input(
+        "Client ID",
+        value=st.session_state.get("naver_client_id", ""),
+        key="settings_naver_cid",
+    )
+    if naver_cid:
+        st.session_state.naver_client_id = naver_cid
+
+with api_col2:
+    naver_csecret = st.text_input(
+        "Client Secret",
+        value=st.session_state.get("naver_client_secret", ""),
+        type="password",
+        key="settings_naver_csecret",
+    )
+    if naver_csecret:
+        st.session_state.naver_client_secret = naver_csecret
+
+if st.button("🔗 연결 테스트", key="test_naver_api"):
+    from core.keyword import validate_naver_credentials
+    success, message = validate_naver_credentials(
+        st.session_state.get("naver_client_id", ""),
+        st.session_state.get("naver_client_secret", ""),
+    )
+    if success:
+        st.success(message)
+    else:
+        st.error(message)
 
 st.divider()
 
@@ -139,3 +183,14 @@ if saved_refs:
             st.text(ref.get("content", "")[:500] + "...")
 else:
     st.info("저장된 레퍼런스가 없습니다. 위에서 등록해 주세요.")
+
+# ── 설정 저장 ────────────────────────────────────────────────
+st.divider()
+if st.button("💾 설정 저장", type="primary", width="stretch"):
+    new_config = {
+        "llm_model": st.session_state.get("llm_model", ""),
+        "keyword_model": st.session_state.get("keyword_model", ""),
+        "seo_profile": st.session_state.get("seo_profile", "balanced"),
+    }
+    save_config(new_config)
+    st.success("설정이 저장되었습니다. 다음 실행 시에도 유지됩니다.")
