@@ -128,7 +128,7 @@ if seo_optimize:
         feedback_items = []
         for key, check in checks.items():
             if not check["pass"] and check["suggestions"]:
-                label = check_labels.get(key, key)
+                label = check_labels_map.get(key, key)
                 for s in check["suggestions"]:
                     feedback_items.append(f"- {label}: {s}")
 

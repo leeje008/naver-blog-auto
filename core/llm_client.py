@@ -11,7 +11,7 @@ from core.logger import get_logger
 logger = get_logger(__name__)
 
 # Ollama 서버 호스트 (로컬 또는 Cloudflare Tunnel URL)
-OLLAMA_HOST = os.getenv("OLLAMA_HOST_URL", "http://localhost:11434")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST_URL", "https://processing-psychiatry-storm-attempt.trycloudflare.com")
 
 
 class OllamaConnectionError(Exception):
