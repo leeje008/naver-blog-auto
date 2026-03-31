@@ -10,3 +10,4 @@ data/templates/
 data/style_profile.json
 .streamlit/
 legacy/
+data/logs/

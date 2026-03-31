@@ -1,13 +1,17 @@
 """LLM 호출 추상화 모듈 (Ollama 기본, GPT 전환 대비)."""
 
+import os
 from collections.abc import Generator
 
 import ollama
-from ollama import ResponseError
+from ollama import Client, ResponseError
 
 from core.logger import get_logger
 
 logger = get_logger(__name__)
+
+# Ollama 서버 호스트 (로컬 또는 Cloudflare Tunnel URL)
+OLLAMA_HOST = os.getenv("OLLAMA_HOST_URL", "http://localhost:11434")
 
 
 class OllamaConnectionError(Exception):
@@ -17,14 +21,15 @@ class OllamaConnectionError(Exception):
 class LLMClient:
     """Ollama 기반 LLM 클라이언트."""
 
-    def __init__(self, model: str = "qwen3.5:27b"):
+    def __init__(self, model: str = "gemma3:12b"):
         self.model = model
-        logger.info("LLMClient 초기화: model=%s", model)
+        self._client = Client(host=OLLAMA_HOST)
+        logger.info("LLMClient 초기화: model=%s, host=%s", model, OLLAMA_HOST)
 
     def check_connection(self) -> bool:
         """Ollama 서버 연결 상태 확인."""
         try:
-            ollama.list()
+            self._client.list()
             return True
         except Exception as e:
             logger.error("Ollama 서버 연결 실패: %s", e)
@@ -43,7 +48,7 @@ class LLMClient:
         self.ensure_connected()
         logger.debug("generate 호출: model=%s, prompt_len=%d", self.model, len(user_prompt))
         try:
-            response = ollama.chat(
+            response = self._client.chat(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -68,7 +73,7 @@ class LLMClient:
         self.ensure_connected()
         logger.debug("generate_with_image 호출: model=%s, images=%d장", self.model, len(images))
         try:
-            response = ollama.chat(
+            response = self._client.chat(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -93,7 +98,7 @@ class LLMClient:
         self.ensure_connected()
         logger.debug("generate_stream 호출: model=%s", self.model)
         try:
-            stream = ollama.chat(
+            stream = self._client.chat(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -115,5 +120,5 @@ class LLMClient:
 
     def list_models(self) -> list[str]:
         """사용 가능한 Ollama 모델 목록 반환."""
-        models = ollama.list()
+        models = self._client.list()
         return [m.model for m in models.models]

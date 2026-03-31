@@ -38,8 +38,8 @@ with col_model1:
     else:
         st.session_state.llm_model = st.text_input(
             "글 작성 모델 직접 입력",
-            value=_config.get("llm_model", "qwen3.5:27b"),
-            placeholder="qwen3.5:27b",
+            value=_config.get("llm_model", "gemma3:12b"),
+            placeholder="gemma3:12b",
         )
 
 with col_model2:
@@ -60,8 +60,8 @@ with col_model2:
     else:
         st.session_state.keyword_model = st.text_input(
             "키워드 모델 직접 입력",
-            value=_config.get("keyword_model", "llama3.1:8b"),
-            placeholder="llama3.1:8b",
+            value=_config.get("keyword_model", "gemma3:12b"),
+            placeholder="gemma3:12b",
         )
 
 st.divider()
