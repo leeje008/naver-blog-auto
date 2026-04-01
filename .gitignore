@@ -11,3 +11,7 @@ data/style_profile.json
 .streamlit/
 legacy/
 data/logs/
+node_modules/
+.next/
+frontend/.next/
+frontend/node_modules/
